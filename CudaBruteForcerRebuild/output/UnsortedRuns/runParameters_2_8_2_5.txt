@@ -1,0 +1,40 @@
+Run Timestamp: 2_8_2_5
+
+nThreads: 256
+memorySize: 10000000
+
+Computing Max Elevation!
+
+Is HAU-Aligned: 1
+
+Is ZXSum: 1
+
+Use Positive Z: 1
+
+MinQ1: 1
+MaxQ1: 4
+MinQ2: 1
+MaxQ2: 4
+MinQ3: 1
+MaxQ3: 4
+
+nPUFrames: 3
+maxFrames: 200
+
+minNX: -0.250000
+maxNX: -0.210000
+minNY: 0.750000
+maxNY: 0.750000
+minNZXSum: 0.600000
+maxNZXSum: 0.640000
+
+nSamplesNX: 41
+nSamplesNY: 1
+nSamplesNZ: 41
+
+deltaX: 0.500000
+deltaZ: 0.500000
+
+NormalListPath: 
+
+Total Running Time: 14.877350 second(s)

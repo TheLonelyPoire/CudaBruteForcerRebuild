@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Trig.cpp">
+      <Filter>UnusedFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="BoundaryDistance.cpp">
+      <Filter>UnusedFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Platform.cu" />
+    <ClCompile Include="Path.cpp">
+      <Filter>UnusedFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="vmath.cpp" />
+    <ClCompile Include="Surface.cpp" />
+    <ClCompile Include="RunParameters.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SolutionStructs.cuh" />
+    <ClInclude Include="Trig.hpp">
+      <Filter>UnusedFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="BoundaryDistance.hpp">
+      <Filter>UnusedFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="BruteforceVariables.cuh" />
+    <ClInclude Include="Floors.cuh" />
+    <ClInclude Include="BruteforceFunctions.cuh" />
+    <ClInclude Include="Platform.cuh" />
+    <ClInclude Include="Path.hpp">
+      <Filter>UnusedFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="vmath.hpp" />
+    <ClInclude Include="Surface.hpp" />
+    <ClInclude Include="RunParameters.hpp" />
+    <ClInclude Include="PlatformSolutionFunctions.cuh" />
+    <ClInclude Include="UpwarpSolutionFunctions.cuh" />
+    <ClInclude Include="CommonFunctions.cuh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="UnusedFiles">
+      <UniqueIdentifier>{f423cfae-960e-4f12-990c-62d7025cf540}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="Floors.cu" />
+    <CudaCompile Include="BruteforceFunctions.cu" />
+    <CudaCompile Include="BruteforceVariables.cu" />
+    <CudaCompile Include="SolutionStructs.cu" />
+    <CudaCompile Include="main.cu" />
+    <CudaCompile Include="PlatformSolutionFunctions.cu" />
+    <CudaCompile Include="UpwarpSolutionFunctions.cu" />
+    <CudaCompile Include="CommonFunctions.cu" />
+  </ItemGroup>
+</Project>

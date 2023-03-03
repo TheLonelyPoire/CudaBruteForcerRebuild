@@ -1,0 +1,38 @@
+Run Timestamp: 2_6_0_20
+
+nThreads: 256
+memorySize: 10000000
+
+Is HAU-Aligned: 1
+
+Is ZXSum: 1
+
+Use Positive Z: 1
+
+MinQ1: 1
+MaxQ1: 4
+MinQ2: 1
+MaxQ2: 4
+MinQ3: 1
+MaxQ3: 4
+
+nPUFrames: 3
+maxFrames: 200
+
+minNX: -0.247200
+maxNX: -0.246600
+minNY: 0.899000
+maxNY: 0.899000
+minNZXSum: 0.599800
+maxNZXSum: 0.600400
+
+nSamplesNX: 121
+nSamplesNY: 1
+nSamplesNZ: 121
+
+deltaX: 0.500000
+deltaZ: 0.500000
+
+NormalListPath: 
+
+Total Running Time: 4 minute(s) 51.598492 second(s)
