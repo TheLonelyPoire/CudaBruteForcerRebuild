@@ -26,27 +26,27 @@ std::string get_timestamp(std::chrono::system_clock::time_point tp)
 {
     std::time_t time_t = std::chrono::system_clock::to_time_t(tp);
     std::tm* tm = std::localtime(&time_t);
-    
+
     return std::to_string(tm->tm_mon + 1) + "_" + std::to_string(tm->tm_mday) + "_" + std::to_string(tm->tm_hour) + "_" + std::to_string(tm->tm_min);
 }
 
 int get_hours_from_seconds(double seconds)
 {
-    return (int) (seconds / 3600.0);
+    return (int)(seconds / 3600.0);
 }
 
 int get_minutes_from_seconds(double seconds)
 {
     int hour_seconds = get_hours_from_seconds(seconds) * 3600;
-    return (int) ((seconds - hour_seconds) / 60.0);
+    return (int)((seconds - hour_seconds) / 60.0);
 }
 
 /**
  * Reads a list of normals in from the file at the specified path.
- * 
+ *
  * The expected format for this file is a CSV. There should be one normal with three components per line. These components should be separated by commas.
  *
- * @param normals - A pointer to the list of normals. The function will clear the list and add all normals found in the file. 
+ * @param normals - A pointer to the list of normals. The function will clear the list and add all normals found in the file.
  * @param filePath - The path of the file with the list of normals.
  * @return If the file is read without any problems, the function returns 0. If an error is encountered, the function will return 1.
  */
@@ -113,7 +113,7 @@ int read_normals_file(std::vector<Vec3f>& normals, std::string filePath)
 }
 
 int main(int argc, char* argv[])
-{   
+{
     std::cout << "Bruteforcer Program Startup:\n";
     auto startTime = std::chrono::system_clock::now();
     std::string timestamp = get_timestamp(startTime);
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
     nSamplesNX = minNX == maxNX ? 1 : nSamplesNX;
     nSamplesNY = minNY == maxNY ? 1 : nSamplesNY;
 
-    if(!useZXSum)
+    if (!useZXSum)
         nSamplesNZ = minNZ == maxNZ ? 1 : nSamplesNZ;
     else
         nSamplesNZ = minNZXSum == maxNZXSum ? 1 : nSamplesNZ;
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
             printf("-p <platform_x> <platform_y> <platform_z>: Position of the pyramid platform.\n");
             printf("                                           Default: %g %g %g\n", platformPos[0], platformPos[1], platformPos[2]);
             printf("-ni: Optional path to a list of normals around which to sample. If left empty, no list of normals is used, and samples are displaced from (0,0,0).\n");
-            printf("    Default: %s\n", normalsInput.c_str()); 
+            printf("    Default: %s\n", normalsInput.c_str());
             printf("-o: Path to the output file.\n");
             printf("    Default: %s\n", outFileSolutionData.c_str());
             printf("-rp: Path to the run parameters file.\n");
@@ -333,7 +333,7 @@ int main(int argc, char* argv[])
             return 1;
         }
     }
-    
+
     std::cout << "  Initializing Parameters........\n";
 
     std::cout << "    Initializing Reverse Atan....\n";
@@ -343,9 +343,9 @@ int main(int argc, char* argv[])
     init_mag_set << < 1, 1 >> > ();
 
     std::cout << "    Initializing Floors..........\n";
-    initialise_floors<< < 1, 1 >> >();
+    initialise_floors << < 1, 1 >> > ();
 
-    set_platform_pos<< < 1, 1 >> >(platformPos[0], platformPos[1], platformPos[2]);
+    set_platform_pos << < 1, 1 >> > (platformPos[0], platformPos[1], platformPos[2]);
 
     short* dev_tris;
     float* dev_norms;
@@ -400,6 +400,9 @@ int main(int argc, char* argv[])
     // Writing run parameters to separate .txt file
     wfrp << std::fixed;
 
+    // TODO - REMOVE
+    wfrp << "Platform Normal Tilt Data Collection Run"; // TODO - REMOVE
+
     wfrp << "Run Timestamp: " << timestamp << "\n\n";
 
     wfrp << "nThreads: " << nThreads << '\n';
@@ -411,8 +414,8 @@ int main(int argc, char* argv[])
     wfrp << "Is HAU-Aligned: " << runHAUSolver << "\n\n";
 
     wfrp << "Is ZXSum: " << useZXSum << "\n\n";
-    
-    if(useZXSum)
+
+    if (useZXSum)
         wfrp << "Use Positive Z: " << usePositiveZ << "\n\n";
 
     wfrp << "MinQ1: " << minQ1 << '\n';
@@ -421,7 +424,7 @@ int main(int argc, char* argv[])
     wfrp << "MaxQ2: " << maxQ2 << '\n';
     wfrp << "MinQ3: " << minQ3 << '\n';
     wfrp << "MaxQ3: " << maxQ3 << "\n\n";
-    
+
     wfrp << "nPUFrames: " << nPUFrames << '\n';
     wfrp << "maxFrames: " << maxFrames << "\n\n";
 
@@ -429,13 +432,13 @@ int main(int argc, char* argv[])
     wfrp << "maxNX: " << maxNX << '\n';
     wfrp << "minNY: " << minNY << '\n';
     wfrp << "maxNY: " << maxNY << '\n';
-    
+
     if (!useZXSum)
     {
         wfrp << "minNZ: " << minNZ << '\n';
         wfrp << "maxNZ: " << maxNZ << "\n\n";
     }
-    else 
+    else
     {
         wfrp << "minNZXSum: " << minNZXSum << '\n';
         wfrp << "maxNZXSum: " << maxNZXSum << "\n\n";
@@ -450,10 +453,18 @@ int main(int argc, char* argv[])
 
     wfrp << "NormalListPath: " << normalsInput << "\n\n";
 
+    // TODO - UNCOMMENT
+    /*
     if (runHAUSolver)
         setup_output_hau(wf);
     else
         setup_output_non_hau(wf);
+    */
+
+    // TODO - REMOVE
+    wf << std::fixed;
+    wf << "Normal X, Normal Y, Normal Z, ";
+    wf << "End Normal X, End Normal Y, End Normal Z" << std::endl;
 
     std::unordered_map<uint64_t, PUSolution> puSolutionLookup;
 
@@ -472,7 +483,7 @@ int main(int argc, char* argv[])
 
     std::cout << "\n  Startup Complete!\n\nStarting Bruteforcer...\n\n";
 
-    for (normalIter; normalIter < normals.end(); normalIter++){
+    for (normalIter; normalIter < normals.end(); normalIter++) {
         if (useZXSum)
         {
             currentZXSum = abs((*normalIter)[2]);
@@ -539,7 +550,7 @@ int main(int argc, char* argv[])
     double seconds = running_time.count() - 3600 * hours - 60 * minutes;
 
     wfrp << "Total Running Time: ";
-    
+
     if (hours > 0)
     {
         wfrp << hours << " hr(s) ";
@@ -548,7 +559,7 @@ int main(int argc, char* argv[])
     {
         wfrp << minutes << " minute(s) ";
     }
-    
+
     wfrp << seconds << " second(s)" << '\n';
 
     wfrp.close();

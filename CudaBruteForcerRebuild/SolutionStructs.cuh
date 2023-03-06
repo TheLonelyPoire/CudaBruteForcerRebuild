@@ -9,7 +9,7 @@
 // Common Definitions
 
 # define MAX_UPWARP_SOLUTIONS  8000000  // Set to 8000000 normally
-# define MAX_PLAT_SOLUTIONS    50000    // Set to 200000 for non-HAU-aligned, set to 50000 for HAU-aligned
+# define MAX_PLAT_SOLUTIONS    200000    // Set to 200000 for non-HAU-aligned, set to 50000 for HAU-aligned
 
 // Non-HAU-Aligned Definitions
 

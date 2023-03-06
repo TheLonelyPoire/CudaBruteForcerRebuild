@@ -98,7 +98,7 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
 
         cudaMemcpyFromSymbol(&nPlatSolutionsCPU, nPlatSolutions, sizeof(int), 0, cudaMemcpyDeviceToHost);
 
-        if (nPlatSolutionsCPU > 0) {
+        if (nPlatSolutionsCPU > 0 && false /* TODO - REMOVE THIS CONDITION*/) {
             normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j] = 1;
 
             printf("---------------------------------------\nTesting Normal: %g, %g, %g\n        Index: %d, %d, %d, %d\n", normX, normY, normZ, g, h, i, j);
@@ -124,6 +124,45 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
         else
         {
             printf("No platform solutions found for normal: %f, %f, %f.\n", normX, normY, normZ);
+
+            // TODO - REMOVE THIS WHOLE SECTION
+            cudaDeviceSynchronize();
+
+
+            printf("Num Sols: %d\n", nPlatSolutionsCPU);
+
+            if (nPlatSolutionsCPU > MAX_PLAT_SOLUTIONS) {
+                fprintf(stderr, "Warning: Number of platform solutions for this normal has been exceeded. No more solutions for this normal will be recorded. Increase the internal maximum to prevent this from happening.\n");
+                nPlatSolutionsCPU = MAX_PLAT_SOLUTIONS;
+            }
+
+            if (nPlatSolutionsCPU > 0) {
+                struct PlatformSolution* platSolutionsCPU = (struct PlatformSolution*)std::malloc(nPlatSolutionsCPU * sizeof(struct PlatformSolution));
+
+                cudaError_t result = cudaMemcpyFromSymbol(platSolutionsCPU, platSolutions, nPlatSolutionsCPU * sizeof(struct PlatformSolution), 0, cudaMemcpyDeviceToHost);
+
+                if (result != CUDA_SUCCESS)
+                {
+                    std::cout << "COPY ERROR: " << cudaGetErrorString(result) << "\n";
+                }
+
+                cudaDeviceSynchronize();
+
+                for (int l = 0; l < nPlatSolutionsCPU; l++) {
+                    PlatformSolution* platSol = &(platSolutionsCPU[l]);
+
+                    wf << normX << ", " << normY << ", " << normZ << ", ";
+                    wf << platSol->endNormal[0] << ", " << platSol->endNormal[1] << ", " << platSol->endNormal[2];
+                    wf << std::endl;
+
+                    if (l == 200 || l == 400 || l == 1000)
+                    {
+                        std::cout << platSol->endNormal[0] << ", " << platSol->endNormal[1] << ", " << platSol->endNormal[2] << std::endl;
+                    }
+                }
+
+                free(platSolutionsCPU);
+            }
         }
 
         if (nUpwarpSolutionsCPU > 0) {
@@ -134,7 +173,7 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
                 nUpwarpSolutionsCPU = MAX_UPWARP_SOLUTIONS;
             }
 
-            printf("        # Upwarp Solutions: %d\n", nUpwarpSolutionsCPU); 
+            printf("        # Upwarp Solutions: %d\n", nUpwarpSolutionsCPU);
 
             if (!stopAtUpwarp)
             {
@@ -401,7 +440,7 @@ void run_min_upwarp_speed_computations(int g, int h, int i, int j, float normX, 
 
             for (int i = 0; i < nUpwarpSolutionsCPU; ++i)
             {
-                float puDist = sqrt((&upwarpSolutionsCPU[i])->pux* (&upwarpSolutionsCPU[i])->pux + (&upwarpSolutionsCPU[i])->puz * (&upwarpSolutionsCPU[i])->puz);
+                float puDist = sqrt((&upwarpSolutionsCPU[i])->pux * (&upwarpSolutionsCPU[i])->pux + (&upwarpSolutionsCPU[i])->puz * (&upwarpSolutionsCPU[i])->puz);
                 float speed = 65536 * puDist / platSolutionsCPU[(&upwarpSolutionsCPU[i])->platformSolutionIdx].endNormal[1];
 
                 if (speed < minSpeed)
@@ -592,7 +631,7 @@ __device__ bool test_stick_position(int solIdx, int x, int y, float endSpeed, fl
         predictedReturnPosition[0] = predictedReturnPosition[0] + (xVel2a / 4.0f);
         predictedReturnPosition[2] = predictedReturnPosition[2] + (xVel2a / 4.0f);
     }
-    
+
     if (speedTest && fabs(predictedReturnPosition[0] - returnPosition[0]) < 1000 && fabs(predictedReturnPosition[2] - returnPosition[2]) < 1000) {
         float xShift = predictedReturnPosition[0] - returnPosition[0];
         float zShift = predictedReturnPosition[2] - returnPosition[2];
@@ -710,7 +749,7 @@ __device__ bool test_stick_position(int solIdx, int x, int y, float endSpeed, fl
 
                     float endHeight;
                     int floorIdx;
-                                        
+
                     if (q1 == 1) {
                         if (fmaxf(intersectionPoints[0][1], intersectionPoints[1][1]) > marioMinY && fminf(intersectionPoints[0][1], intersectionPoints[1][1]) < testOneUpPlatformPosition[1]) {
                             if (intersectionPoints[0][1] < marioMinY) {
@@ -951,7 +990,7 @@ __device__ bool test_one_up_position(int solIdx, float* startPosition, float* on
     }
 
     for (int cIdx = minCameraIdx; cIdx <= maxCameraIdx; cIdx++) {
-        int cameraYaw = gArctanTableG[cIdx % 65536];
+        int cameraYaw = gArctanTableG[(8192 + cIdx) % 8192];
 
         float xVel2 = 4.0f * (returnPosition[0] - oneUpPlatformPosition[0]) / (oneUpPlatformNormalY + (q3 - 1));
         float zVel2 = 4.0f * (returnPosition[2] - oneUpPlatformPosition[2]) / (oneUpPlatformNormalY + (q3 - 1));
@@ -1009,9 +1048,9 @@ __device__ bool test_one_up_position(int solIdx, float* startPosition, float* on
                                 n = -t;
                             }
                             else {
-                                bool signTest = (xVel1 > 0 && xVel2 < 0) || (xVel1 < 0 && xVel2 > 0);
+                                bool signTest = (zVel1 > 0 && zVel2 > 0) || (zVel1 < 0 && zVel2 < 0);
 
-                                if ((signTest && zVel1 > 0) || (!signTest && zVel1 < 0)) {
+                                if ((signTest)) {
                                     n = (-((double)s * (double)t) - 1.0 + sqrt(((double)s * (double)t - 1.0) * ((double)s * (double)t - 1.0) + 4.0 * (double)s * (double)s)) / (2.0 * (double)s);
                                 }
                                 else {
@@ -1036,7 +1075,7 @@ __device__ bool test_one_up_position(int solIdx, float* startPosition, float* on
                                     int y = round(yS);
 
                                     if (x != -1 && x != 1 && y != -1 && y != 1) {
-                                        
+
                                         if (test_stick_position(solIdx, x, y, endSpeed, vel1, xVel1, zVel1, angle, cameraYaw, startPosition, oneUpPlatformPosition, oneUpPlatformXMin, oneUpPlatformXMax, oneUpPlatformYMin, oneUpPlatformYMax, oneUpPlatformZMin, oneUpPlatformZMax, oneUpPlatformNormalX, oneUpPlatformNormalY, f, frame1Position, returnPosition, q1, q2, q3)) {
                                             foundSolution = true;
                                         }
@@ -1050,7 +1089,8 @@ __device__ bool test_one_up_position(int solIdx, float* startPosition, float* on
                                         int minX = (fabs(yS) < 0.00001) ? ((xS < 0) ? -128 : 64) : ((xS < 0) ? floor(xS) : ceil(xS));
                                         int maxX = (fabs(yS) < 0.00001) ? ((xS < 0) ? -64 : 127) : ((xS < 0) ? ceil(-128 * xS / yS) : floor(127 * xS / yS));
 
-                                        for (int x = minX; x <= maxX; x++) {;
+                                        for (int x = minX; x <= maxX; x++) {
+                                            ;
 
                                             double y = (double)x * (yS / xS);
 
@@ -2163,7 +2203,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         cudaMemcpyToSymbol(nOUPSolutions, &nOUPSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
         /* UNCOMMENT TO CHECK STICK SOLUTIONS
-        * 
+        *
         * nBlocks = (nStickSolutionsCPU + nThreads - 1) / nThreads;
         *
         * check_stick_solutions_for_the_right_one << < nBlocks, nThreads >> > ();
@@ -2373,7 +2413,7 @@ __global__ void check_stick_solutions_for_the_right_one()
                 //printf("Matching Upwarp Solution Found!\n Index: %i\n PlatSolEndNormal: %f, %f, %f\n\n", idx, platSol->endNormal[0], platSol->endNormal[1], platSol->endNormal[2]);
 
                 if (abs(platSol->endNormal[0] - 0.1899999082) < 0.0001 && abs(platSol->endNormal[1] - 0.843072772) < 0.0001 && abs(platSol->endNormal[2] - 0.4891075492) < 0.0001 &&
-                    abs(platSol->endPosition[0] + 1812.662598) < 0.0001 && abs(platSol->endPosition[1] + 3065.262451) < 0.0001 && abs(platSol->endPosition[2] + 424.9223938) < 0.0001 && 
+                    abs(platSol->endPosition[0] + 1812.662598) < 0.0001 && abs(platSol->endPosition[1] + 3065.262451) < 0.0001 && abs(platSol->endPosition[2] + 424.9223938) < 0.0001 &&
                     abs(platSol->returnPosition[0] + 1864.5) < 0.0001 && abs(platSol->returnPosition[1] + 2928.717285) < 0.0001 && abs(platSol->returnPosition[2] + 454) < 0.0001 &&
                     platSol->nFrames == 55)
                 {
@@ -2417,7 +2457,7 @@ void setup_output_hau(std::ofstream& wf)
     wf << "Post-Tilt Position X, Post-Tilt Position Y, Post-Tilt Position Z, ";
     wf << "Post-Upwarp Position X, Post-Upwarp Position Y, Post-Upwarp Position Z, ";
     wf << "Upwarp PU X, Upwarp PU Z";
-    
+
     if (printOneOffSolutions)
     {
         wf << ", (OneOff) Stick q1q2, (OneOff) Stick q3, (OneOff) Stick XDir, (OneOff) Stick Start Speed,";

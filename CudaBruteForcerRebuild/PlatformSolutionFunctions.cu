@@ -314,8 +314,9 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
             if (onPlatform && oldOnPlatform) {
                 float testNormal[3] = { fabs(normal[0]), fabs(normal[1]), fabs(normal[2]) };
 
-                bool validSolution = false;
+                bool validSolution = true; // TODO - CHANGE BACK TO 'false'
 
+                /* TODO - UNCOMMENT
                 if (testNormal[0] > testNormal[1] || testNormal[2] > testNormal[1]) {
                     validSolution = true;
                 }
@@ -351,6 +352,7 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
                         }
                     }
                 }
+                */
 
                 if (validSolution) {
                     int solIdx = atomicAdd(&nPlatSolutions, 1);
@@ -384,6 +386,13 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
                         }
 
                         platSolutions[solIdx] = solution;
+
+                        if (solIdx == 200 || solIdx == 400 || solIdx == 1000)
+                        {
+                            printf("End Normal X: %f\n", solution.endNormal[0]);
+                            printf("End Normal Y: %f\n", solution.endNormal[1]);
+                            printf("End Normal Z: %f\n", solution.endNormal[2]);
+                        }
                     }
                 }
             }
