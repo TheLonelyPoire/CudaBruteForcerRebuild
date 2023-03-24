@@ -35,8 +35,8 @@ def update_image_plot(implot, img, pauseRate, title=''):
     return implot
 
 
-folderName = "../output/ImportantSolutions/"
-fileName = "normalStagesReached_2_9_21_36.bin"
+folderName = "../output/UpwarpRuns/"
+fileName = "minUpwarpSpeeds_2_14_3_40.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
@@ -63,8 +63,8 @@ if fileName.startswith("norm"):
 else:
     plotArr = getFloatDataFromBinaryFile(fileName, folderName=folderName, nSamplesY=rangeParameters.nSamplesNY, nSamplesX=rangeParameters.nSamplesNX, nSamplesZ=rangeParameters.nSamplesNZ)
 
-rangeParameters = RP_FINER_EXPANDED_RUN
-plotArr = NS_FINER_EXPANDED_RUN
+# rangeParameters = RP_FINER_EXPANDED_RUN
+# plotArr = NS_FINER_EXPANDED_RUN
 
 if(useParallelogram):
     plotArr = getDataAsParallelogram(plotArr)
@@ -73,9 +73,14 @@ numStages = 10
 pauseRate = 0.05 
 
 if fileName.startswith("norm"):
-    colormap = CM_EXTRA_STAGES
+    # colormap = CM_FRACTAL if not useParallelogram else CM_FRACTAL_PARA
+    colormap = CM_EXTRA_STAGES if not useParallelogram else CM_EXTRA_STAGES_PARA
+elif fileName.startswith("plat"):
+    colormap = CM_HWR_BANDS 
+elif fileName.startswith("minUp"):
+    colormap = CM_UPWARP_SPEED
 else:
-    colormap = CM_HWR_BANDS
+    colormap = CM_DEFAULT
 
 implot = setupPlot(plotArr, 0, rangeParameters, numStages, pauseRate, useParallelogram)
 for ny in range(rangeParameters.nSamplesNY):
