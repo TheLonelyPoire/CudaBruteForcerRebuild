@@ -415,7 +415,7 @@ int main(int argc, char* argv[])
     if(useZXSum)
         wfrp << "Use Positive Z: " << usePositiveZ << "\n\n";
 
-    wfrp << "Print Off By One Solutions:" << printOneOffSolutions << "\n\n";
+    wfrp << "Print Off By One Solutions: " << printOneOffSolutions << "\n\n";
 
     wfrp << "MinQ1: " << minQ1 << '\n';
     wfrp << "MaxQ1: " << maxQ1 << '\n';
