@@ -45,6 +45,8 @@ class RangeParameters:
     def getYStepSize(self):
         return 0 if self.nSamplesNY <= 1 else (self.maxNY - self.minNY) / (self.nSamplesNY - 1) 
     
+    def getZXAspectRatio(self):
+        return self.nSamplesNZ / self.nSamplesNX
 
     def getExtents(self, usePara=False):
         minSecond = self.minNZXSum if self.useZXSum else self.minNZ
