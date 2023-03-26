@@ -31,7 +31,22 @@ def computeColorMapFromColorList(color_list, name=''):
 
     return clrs.LinearSegmentedColormap(name, color_dict)
 
+def computeColorMapFromHexList(color_list):
+    list_converted = []
 
+    for i in range(len(color_list)):
+        list_converted.append(hex_to_rgb(color_list[i]))
+    
+    return computeColorMapFromColorList(list_converted)
+
+def hex_to_rgb(hex_code):
+    hex_code = hex_code.lstrip('#')
+
+    red = int(hex_code[0:2], 16) / 255.0
+    green = int(hex_code[2:4], 16) / 255.0
+    blue = int(hex_code[4:6], 16) / 255.0
+
+    return (red, green, blue)
 
 CM_FRACTAL = computeColorMapFromColorList([(0,0,0),
                                             (0,0,0.5),
@@ -83,6 +98,14 @@ CM_EXTRA_STAGES_ORIG = computeColorMapFromColorList([(0,0,0),
                                                     (1,0.5,0),
                                                     (1,1,0),
                                                     (1,1,1)])
+
+CM_MARBLER = computeColorMapFromHexList(
+    ['#000000', '#101080', 
+     '#900010', '#006050', 
+     '#902090', '#00ADFF', 
+     '#FF4030', '#00C000', 
+     '#FFF200', '#FFFFFF']
+)
 
 CM_HWR_BANDS = clrs.LinearSegmentedColormap('hwrbands', {'red':  [[0.0,  0.0, 0.0],
                                                                   [0.3,  0.0, 1.0],
