@@ -1,6 +1,9 @@
 #include "cuda_runtime.h"
 
-#include <iostream>
+#include <fstream>
+
+
+void write_run_parameters(std::ofstream& wfrp, std::string timestamp);
 
 /** 
 Checks whether Mario's positions are within the bounds of the map (+/-8192 in all three axes).

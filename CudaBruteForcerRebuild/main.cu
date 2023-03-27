@@ -120,6 +120,7 @@ int main(int argc, char* argv[])
 
     std::string outFileSolutionData = "output/solutionData_" + timestamp + ".csv";
     std::string outFileNormalStages = "output/normalStagesReached_" + timestamp + ".bin";
+    std::string outFileFinalHeightDifferences = "output/finalHeightDifferences_" + timestamp + ".bin";
     std::string outFilePlatformHWRs = "output/platformHWRs_" + timestamp + ".bin";
     std::string outFileMinUpwarpSpeeds = "output/minUpwarpSpeeds_" + timestamp + ".bin";
     std::string outFileRunParams = "output/runParameters_" + timestamp + ".txt";
@@ -372,9 +373,13 @@ int main(int argc, char* argv[])
     // Height Wiggle Room binary output filestream
     std::ofstream wfphwrs;
 
+    // Final Height Difference binary output filestream
+    std::ofstream wffhds;
+
     if (!computeMaxElevation && !computeMinUpwarp)
     {
         wfns = std::ofstream(outFileNormalStages, std::ios::out | std::ios::binary);
+        wffhds = std::ofstream(outFileFinalHeightDifferences, std::ios::out | std::ios::binary);
     }
     else
     {
@@ -384,11 +389,13 @@ int main(int argc, char* argv[])
     std::cout << "  Creating Normal Stage Array...\n";
 
     char* normalStages;
+    float* finalHeightDiffs;
     float* platformHWRs;
 
     if (!computeMaxElevation && !computeMinUpwarp)
     {
         normalStages = (char*)std::calloc(sizeof(char), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
+        finalHeightDiffs = (float*)std::calloc(sizeof(float), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
     }
     else
     {
@@ -398,59 +405,7 @@ int main(int argc, char* argv[])
     std::cout << "  Writing Run Parameters...\n";
 
     // Writing run parameters to separate .txt file
-    wfrp << std::fixed;
-
-    wfrp << "Run Timestamp: " << timestamp << "\n\n";
-
-    wfrp << "nThreads: " << nThreads << '\n';
-    wfrp << "memorySize: " << memorySize << "\n\n";
-
-    if (computeMaxElevation)
-        wfrp << "Computing Max Elevation!\n\n";
-
-    wfrp << "Is HAU-Aligned: " << runHAUSolver << "\n\n";
-
-    wfrp << "Is ZXSum: " << useZXSum << "\n\n";
-    
-    if(useZXSum)
-        wfrp << "Use Positive Z: " << usePositiveZ << "\n\n";
-
-    wfrp << "Print Off By One Solutions: " << printOneOffSolutions << "\n\n";
-
-    wfrp << "MinQ1: " << minQ1 << '\n';
-    wfrp << "MaxQ1: " << maxQ1 << '\n';
-    wfrp << "MinQ2: " << minQ2 << '\n';
-    wfrp << "MaxQ2: " << maxQ2 << '\n';
-    wfrp << "MinQ3: " << minQ3 << '\n';
-    wfrp << "MaxQ3: " << maxQ3 << "\n\n";
-    
-    wfrp << "nPUFrames: " << nPUFrames << '\n';
-    wfrp << "maxFrames: " << maxFrames << "\n\n";
-
-    wfrp << "minNX: " << minNX << '\n';
-    wfrp << "maxNX: " << maxNX << '\n';
-    wfrp << "minNY: " << minNY << '\n';
-    wfrp << "maxNY: " << maxNY << '\n';
-    
-    if (!useZXSum)
-    {
-        wfrp << "minNZ: " << minNZ << '\n';
-        wfrp << "maxNZ: " << maxNZ << "\n\n";
-    }
-    else 
-    {
-        wfrp << "minNZXSum: " << minNZXSum << '\n';
-        wfrp << "maxNZXSum: " << maxNZXSum << "\n\n";
-    }
-
-    wfrp << "nSamplesNX: " << nSamplesNX << '\n';
-    wfrp << "nSamplesNY: " << nSamplesNY << '\n';
-    wfrp << "nSamplesNZ: " << nSamplesNZ << "\n\n";
-
-    wfrp << "deltaX: " << deltaX << '\n';
-    wfrp << "deltaZ: " << deltaZ << "\n\n";
-
-    wfrp << "NormalListPath: " << normalsInput << "\n\n";
+    write_run_parameters(wfrp, timestamp);
 
     if (runHAUSolver)
         setup_output_hau(wf);

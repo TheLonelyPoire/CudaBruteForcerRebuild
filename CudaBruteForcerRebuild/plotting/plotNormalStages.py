@@ -74,7 +74,8 @@ pauseRate = 0.05
 
 if fileName.startswith("norm"):
     # colormap = CM_FRACTAL if not useParallelogram else CM_FRACTAL_PARA
-    colormap = CM_EXTRA_STAGES if not useParallelogram else CM_EXTRA_STAGES_PARA
+    # colormap = CM_EXTRA_STAGES if not useParallelogram else CM_EXTRA_STAGES_PARA
+    colormap = CM_MARBLER if not useParallelogram else CM_MARBLER_PARA
 elif fileName.startswith("plat"):
     colormap = CM_HWR_BANDS 
 elif fileName.startswith("minUp"):

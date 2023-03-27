@@ -107,6 +107,14 @@ CM_MARBLER = computeColorMapFromHexList(
      '#FFF200', '#FFFFFF']
 )
 
+CM_MARBLER_PARA = computeColorMapFromHexList(
+    ['#000000', '#101080', 
+     '#900010', '#006050', 
+     '#902090', '#00ADFF', 
+     '#FF4030', '#00C000', 
+     '#FFF200', '#FFFFFF']
+)
+
 CM_HWR_BANDS = clrs.LinearSegmentedColormap('hwrbands', {'red':  [[0.0,  0.0, 0.0],
                                                                   [0.3,  0.0, 1.0],
                                                                   [1.0,  1.0, 1.0]],

@@ -9,7 +9,65 @@
 
 #include "BruteforceVariables.cuh"
 #include "Floors.cuh"
+#include "RunParameters.hpp"
 
+
+void write_run_parameters(std::ofstream& wfrp, std::string timestamp)
+{
+    wfrp << std::fixed;
+
+    wfrp << "Run Timestamp: " << timestamp << "\n\n";
+
+    wfrp << "nThreads: " << nThreads << '\n';
+    wfrp << "memorySize: " << memorySize << "\n\n";
+
+    if (computeMaxElevation)
+        wfrp << "Computing Max Elevation!\n\n";
+
+    wfrp << "Is HAU-Aligned: " << runHAUSolver << "\n\n";
+
+    wfrp << "Is ZXSum: " << useZXSum << "\n\n";
+
+    if (useZXSum)
+        wfrp << "Use Positive Z: " << usePositiveZ << "\n\n";
+
+    wfrp << "Print Off By One Solutions: " << printOneOffSolutions << "\n\n";
+
+    wfrp << "MinQ1: " << minQ1 << '\n';
+    wfrp << "MaxQ1: " << maxQ1 << '\n';
+    wfrp << "MinQ2: " << minQ2 << '\n';
+    wfrp << "MaxQ2: " << maxQ2 << '\n';
+    wfrp << "MinQ3: " << minQ3 << '\n';
+    wfrp << "MaxQ3: " << maxQ3 << "\n\n";
+
+    wfrp << "nPUFrames: " << nPUFrames << '\n';
+    wfrp << "maxFrames: " << maxFrames << "\n\n";
+
+    wfrp << "minNX: " << minNX << '\n';
+    wfrp << "maxNX: " << maxNX << '\n';
+    wfrp << "minNY: " << minNY << '\n';
+    wfrp << "maxNY: " << maxNY << '\n';
+
+    if (!useZXSum)
+    {
+        wfrp << "minNZ: " << minNZ << '\n';
+        wfrp << "maxNZ: " << maxNZ << "\n\n";
+    }
+    else
+    {
+        wfrp << "minNZXSum: " << minNZXSum << '\n';
+        wfrp << "maxNZXSum: " << maxNZXSum << "\n\n";
+    }
+
+    wfrp << "nSamplesNX: " << nSamplesNX << '\n';
+    wfrp << "nSamplesNY: " << nSamplesNY << '\n';
+    wfrp << "nSamplesNZ: " << nSamplesNZ << "\n\n";
+
+    wfrp << "deltaX: " << deltaX << '\n';
+    wfrp << "deltaZ: " << deltaZ << "\n\n";
+
+    wfrp << "NormalListPath: " << normalsInput << "\n\n";
+}
 
 __device__ bool check_inbounds(const float* mario_pos) {
     short x_mod = (short)(int)mario_pos[0];
