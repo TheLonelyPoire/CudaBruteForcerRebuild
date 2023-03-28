@@ -101,8 +101,8 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
         if (nPlatSolutionsCPU > 0) {
             normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j] = 1;
 
-            printf("---------------------------------------\nTesting Normal: %g, %g, %g\n        Index: %d, %d, %d, %d\n", normX, normY, normZ, g, h, i, j);
-            printf("        # Platform Solutions: %d\n", nPlatSolutionsCPU);
+           /* printf("---------------------------------------\nTesting Normal: %g, %g, %g\n        Index: %d, %d, %d, %d\n", normX, normY, normZ, g, h, i, j);
+            printf("        # Platform Solutions: %d\n", nPlatSolutionsCPU);*/
 
             if (nPlatSolutionsCPU > MAX_PLAT_SOLUTIONS) {
                 fprintf(stderr, "Warning: Number of platform solutions for this normal has been exceeded. No more solutions for this normal will be recorded. Increase the internal maximum to prevent this from happening.\n");
@@ -123,7 +123,7 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
         }
         else
         {
-            printf("No platform solutions found for normal: %f, %f, %f.\n", normX, normY, normZ);
+            /*printf("No platform solutions found for normal: %f, %f, %f.\n", normX, normY, normZ);*/
         }
 
         if (nUpwarpSolutionsCPU > 0) {
@@ -134,7 +134,7 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
                 nUpwarpSolutionsCPU = MAX_UPWARP_SOLUTIONS;
             }
 
-            printf("        # Upwarp Solutions: %d\n", nUpwarpSolutionsCPU); 
+           /* printf("        # Upwarp Solutions: %d\n", nUpwarpSolutionsCPU); */
 
             if (!stopAtUpwarp)
             {
@@ -152,7 +152,7 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
         }
         else
         {
-            printf("No upwarp solutions found.\n");
+           /* printf("No upwarp solutions found.\n");*/
         }
     }
 }
@@ -2162,7 +2162,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             nStickSolutionsCPU = MAX_STICK_SOLUTIONS;
         }
 
-        printf("        # Stick Solutions: %d\n", nStickSolutionsCPU);
+        //printf("        # Stick Solutions: %d\n", nStickSolutionsCPU);
 
         cudaMemcpyToSymbol(nOUPSolutions, &nOUPSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
@@ -2188,7 +2188,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             nOUPSolutionsCPU = MAX_OUP_SOLUTIONS;
         }
 
-        printf("        # 1-up Platform Solutions: %d\n", nOUPSolutionsCPU);
+        /*printf("        # 1-up Platform Solutions: %d\n", nOUPSolutionsCPU);*/
 
         cudaMemcpyToSymbol(nSpeedSolutions, &nSpeedSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
@@ -2208,7 +2208,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
 
         }
 
-        printf("        # Speed Solutions: %d\n", nSpeedSolutionsCPU);
+        printf("# Speed Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, nSpeedSolutionsCPU);
 
         cudaMemcpyToSymbol(n10KSolutionsHAU, &n10KSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
@@ -2260,7 +2260,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             n10KSolutionsCPU = MAX_10K_SOLUTIONS_HAU;
         }
 
-        printf("        # 10k Solutions: %d\n", n10KSolutionsCPU);
+        printf("# 10k Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, n10KSolutionsCPU);
 
         struct PlatformSolution* platSolutionsCPU = (struct PlatformSolution*)std::malloc(nPlatSolutionsCPU * sizeof(struct PlatformSolution));
         struct UpwarpSolution* upwarpSolutionsCPU = (struct UpwarpSolution*)std::malloc(nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution));

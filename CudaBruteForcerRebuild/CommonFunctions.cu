@@ -70,7 +70,7 @@ void write_run_parameters(std::ofstream& wfrp, std::string timestamp)
     wfrp << "NormalListPath: " << normalsInput << "\n\n";
 }
 
-
+// This was taken from the following StackOverflow post: https://stackoverflow.com/a/51549250
 __device__ float atomicMinFloat(float* addr, float value) {
     float old;
     old = (value >= 0) ? __int_as_float(atomicMin((int*)addr, __float_as_int(value))) :

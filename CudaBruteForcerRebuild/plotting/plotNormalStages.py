@@ -36,14 +36,14 @@ def update_image_plot(implot, img, pauseRate, title=''):
 
 
 folderName = "../output/"
-fileName = "normalStagesReached_3_27_21_21.bin"
+fileName = "normalStagesReached_3_27_23_55.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
 
 rangeParameters = getRangeParametersFromFile(getCorrespondingRangeParametersFilename(folderName + fileName))
 useParallelogram = False
-tryUseHeightDifference = True
+tryUseHeightDifference = False
 
 # Custom Range Parameters
 minNX = -0.213

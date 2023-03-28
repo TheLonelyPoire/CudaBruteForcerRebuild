@@ -6,7 +6,7 @@
 void write_run_parameters(std::ofstream& wfrp, std::string timestamp);
 
 
-__device__ float atomicMinFloat(float* addr, float value);
+__device__ float atomicMinFloat(float* addr, float value); // This was taken from the following StackOverflow post: https://stackoverflow.com/a/51549250
 
 /** 
 Checks whether Mario's positions are within the bounds of the map (+/-8192 in all three axes).

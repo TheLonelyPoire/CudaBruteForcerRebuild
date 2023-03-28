@@ -425,12 +425,17 @@ int main(int argc, char* argv[])
     float currentZXSum;
     bool currentPositive;
 
-    std::cout << "Min XZSum: " << minNZXSum << "\n";
-    std::cout << "Max XZSum: " << maxNZXSum << "\n";
     std::cout << "Delta X: " << deltaNX << "\n";
     std::cout << "Delta Y: " << deltaNY << "\n";
+
+    if(useZXSum)
+        std::cout << "Delta XZSum: " << (maxNZXSum - minNZXSum) / (nSamplesNZ - 1) << "\n";
+    else
+        std::cout << "Delta Z: " << (maxNZ - minNZ) / (nSamplesNZ - 1) << "\n";
+
+    std::cout << "Samples X: " << nSamplesNX << "\n";
+    std::cout << "Samples Y: " << nSamplesNY << "\n";
     std::cout << "Samples Z: " << nSamplesNZ << "\n";
-    std::cout << "Delta XZSum: " << (maxNZXSum - minNZXSum) / (nSamplesNZ - 1) << "\n";
 
     std::cout << "\n  Startup Complete!\n\nStarting Bruteforcer...\n\n";
 
@@ -444,6 +449,9 @@ int main(int argc, char* argv[])
 
         for (int h = 0; h < nSamplesNY; h++) {
             for (int i = 0; i < nSamplesNX; i++) {
+
+                std::cout << ((current_normal * nSamplesNY + h) * nSamplesNX + i) << " / " << normals.size() * nSamplesNY * nSamplesNX << "\r";
+
                 for (int j = 0; j < nSamplesNZ; j++) {
                     float normX = (*normalIter)[0] + minNX + i * deltaNX;
                     float normY = (*normalIter)[1] + minNY + h * deltaNY;
