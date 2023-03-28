@@ -14,7 +14,7 @@
 
 // Common Bruteforcer Functions
 
-void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, short* host_tris, float* host_norms, short* dev_tris, float* dev_norms, std::unordered_map<uint64_t, PUSolution>& puSolutionLookup, std::ofstream& wf, char* normalStages);
+void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, short* host_tris, float* host_norms, short* dev_tris, float* dev_norms, std::unordered_map<uint64_t, PUSolution>& puSolutionLookup, std::ofstream& wf, char* normalStages, float* finalHeightDiffs);
 
 // Computes the height wiggle room number for the specified normal.
 void run_max_elevation_computations(int g, int h, int i, int j, float normX, float normY, float normZ, short* host_tris, float* host_norms, short* dev_tris, float* dev_norms, std::unordered_map<uint64_t, PUSolution>& puSolutionLookup, std::ofstream& wf, float* platformHWRs);
@@ -62,7 +62,7 @@ __global__ void check_speed_angle();
 
 __global__ void find_stick_solutions();
 
-void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, float* host_norms, std::ofstream& wf, char* normalStages);
+void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, float* host_norms, std::ofstream& wf, char* normalStages, float* finalHeightDiffs);
 
 
 // Checks to see if a PU solution with the correct parameters was found.

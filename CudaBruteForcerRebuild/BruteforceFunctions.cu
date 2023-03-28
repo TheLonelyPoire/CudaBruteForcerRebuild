@@ -17,7 +17,7 @@
 
 // Common Bruteforce Functions
 
-void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, short* host_tris, float* host_norms, short* dev_tris, float* dev_norms, std::unordered_map<uint64_t, PUSolution>& puSolutionLookup, std::ofstream& wf, char* normalStages)
+void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, short* host_tris, float* host_norms, short* dev_tris, float* dev_norms, std::unordered_map<uint64_t, PUSolution>& puSolutionLookup, std::ofstream& wf, char* normalStages, float* finalHeightDiffs)
 {
     Vec3f startNormal = { normX, normY, normZ };
     Platform platform = Platform(platformPos[0], platformPos[1], platformPos[2], startNormal);
@@ -142,7 +142,7 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
 
                 if (runHAUSolver)
                 {
-                    run_hau_bruteforcer(g, h, i, j, normX, normY, normZ, host_norms, wf, normalStages);
+                    run_hau_bruteforcer(g, h, i, j, normX, normY, normZ, host_norms, wf, normalStages, finalHeightDiffs);
                 }
                 else
                 {
@@ -1702,6 +1702,8 @@ __global__ void test_speed_solution() {
                             }
                         }
 
+                        atomicMinFloat(&currentLowestHeightDiff, intendedPosition[1] - oneUpPlatformPosition[1]);
+
                         if (fallTest && intendedPosition[1] < oneUpPlatformPosition[1]) {
                             frame1Position[1] = intendedPosition[1];
 
@@ -2142,8 +2144,10 @@ __global__ void find_stick_solutions() {
     }
 }
 
-void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, float* host_norms, std::ofstream& wf, char* normalStages)
+void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, float* host_norms, std::ofstream& wf, char* normalStages, float* finalHeightDiffs)
 {
+    int current_normal_index = ((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j;
+
     cudaMemcpyToSymbol(nStickSolutions, &nStickSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
     find_stick_solutions << <nBlocks, nThreads >> > ();
@@ -2151,7 +2155,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
     cudaMemcpyFromSymbol(&nStickSolutionsCPU, nStickSolutions, sizeof(int), 0, cudaMemcpyDeviceToHost);
 
     if (nStickSolutionsCPU > 0) {
-        normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j] = 3;
+        normalStages[current_normal_index] = 3;
 
         if (nStickSolutionsCPU > MAX_STICK_SOLUTIONS) {
             fprintf(stderr, "Warning: Number of stick solutions for this normal has been exceeded. No more solutions for this normal will be recorded. Increase the internal maximum to prevent this from happening.\n");
@@ -2177,7 +2181,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
     }
 
     if (nOUPSolutionsCPU > 0) {
-        normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j] = 4;
+        normalStages[current_normal_index] = 4;
 
         if (nOUPSolutionsCPU > MAX_OUP_SOLUTIONS) {
             fprintf(stderr, "Warning: Number of 1-up Platform solutions for this normal has been exceeded. No more solutions for this normal will be recorded. Increase the internal maximum to prevent this from happening.\n");
@@ -2196,7 +2200,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
     }
 
     if (nSpeedSolutionsCPU > 0) {
-        normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j] = 5;
+        normalStages[current_normal_index] = 5;
 
         if (nSpeedSolutionsCPU > MAX_SPEED_SOLUTIONS) {
             fprintf(stderr, "Warning: Number of speed solutions for this normal has been exceeded. No more solutions for this normal will be recorded. Increase the internal maximum to prevent this from happening.\n");
@@ -2212,10 +2216,13 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         int nPass1SolsCPU = 0;
         int nPass2SolsCPU = 0;
         int nPass3SolsCPU = 0;
+        float currentLowestHeightDiffCPU = 400.0f;
 
         cudaMemcpyToSymbol(nPass1Sols, &nPass1SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
         cudaMemcpyToSymbol(nPass2Sols, &nPass2SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
         cudaMemcpyToSymbol(nPass3Sols, &nPass3SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+
+        cudaMemcpyToSymbol(currentLowestHeightDiff, &currentLowestHeightDiffCPU, sizeof(float), 0, cudaMemcpyHostToDevice);
 
         nBlocks = (nSpeedSolutionsCPU + nThreads - 1) / nThreads;
 
@@ -2227,18 +2234,22 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         cudaMemcpyFromSymbol(&nPass2SolsCPU, nPass2Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
         cudaMemcpyFromSymbol(&nPass3SolsCPU, nPass3Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
 
+        cudaMemcpyFromSymbol(&currentLowestHeightDiffCPU, currentLowestHeightDiff, sizeof(float), 0, cudaMemcpyHostToDevice);
+
         if (nPass1SolsCPU > 0)
         {
-            normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j]++;
+            normalStages[current_normal_index]++;
         }
         if (nPass2SolsCPU > 0)
         {
-            normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j]++;
+            normalStages[current_normal_index]++;
         }
         if (nPass3SolsCPU > 0)
         {
-            normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j]++;
+            normalStages[current_normal_index]++;
         }
+
+        finalHeightDiffs[current_normal_index] = currentLowestHeightDiff;
     }
 
     if (n10KSolutionsCPU > 0) {

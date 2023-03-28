@@ -3,6 +3,7 @@
 #include "math.h"
 #include "device_launch_parameters.h"
 #include "device_atomic_functions.h"
+//#include "device_types.h"
 
 #include "Platform.cuh"
 #include "vmath.hpp"
@@ -67,6 +68,15 @@ void write_run_parameters(std::ofstream& wfrp, std::string timestamp)
     wfrp << "deltaZ: " << deltaZ << "\n\n";
 
     wfrp << "NormalListPath: " << normalsInput << "\n\n";
+}
+
+
+__device__ float atomicMinFloat(float* addr, float value) {
+    float old;
+    old = (value >= 0) ? __int_as_float(atomicMin((int*)addr, __float_as_int(value))) :
+        __uint_as_float(atomicMax((unsigned int*)addr, __float_as_uint(value)));
+
+    return old;
 }
 
 __device__ bool check_inbounds(const float* mario_pos) {

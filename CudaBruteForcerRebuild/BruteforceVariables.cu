@@ -56,6 +56,8 @@ __device__ int nPass1Sols = 0;
 __device__ int nPass2Sols = 0;
 __device__ int nPass3Sols = 0;
 
+__device__ float currentLowestHeightDiff = 400.0f;
+
 
 // Common
 

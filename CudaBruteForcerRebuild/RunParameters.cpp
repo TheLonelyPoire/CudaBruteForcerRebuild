@@ -12,7 +12,7 @@ bool useZXSum = true;
 bool usePositiveZ = true;
 
 bool stopAtUpwarp = false;
-bool printOneOffSolutions = true;
+bool printOneOffSolutions = false;
 
 int minQ1 = 1;
 int maxQ1 = 1; // 2 for non-HAU, 4 for HAU, now set to 1
@@ -33,9 +33,9 @@ float maxNY = 0.8335f;
 float minNZXSum = 0.63714f;
 float maxNZXSum = 0.63730f;
 
-int nSamplesNX = 16;
-int nSamplesNZ = 11;
-int nSamplesNY = 11;
+int nSamplesNX = 7;
+int nSamplesNZ = 5;
+int nSamplesNY = 5;
 
 float deltaX = 0.5f;
 float deltaZ = 0.5f;

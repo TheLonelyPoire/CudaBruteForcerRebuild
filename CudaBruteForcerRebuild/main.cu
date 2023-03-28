@@ -394,8 +394,13 @@ int main(int argc, char* argv[])
 
     if (!computeMaxElevation && !computeMinUpwarp)
     {
-        normalStages = (char*)std::calloc(sizeof(char), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
-        finalHeightDiffs = (float*)std::calloc(sizeof(float), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
+        normalStages = (char*)std::calloc(sizeof(char), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);\
+
+        finalHeightDiffs = (float*)std::malloc(sizeof(float) * normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
+        for (int i = 0; i < normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ; ++i)
+        {
+            finalHeightDiffs[i] = 400.0f;
+        }
     }
     else
     {
@@ -458,7 +463,7 @@ int main(int argc, char* argv[])
                     else if (computeMinUpwarp)
                         run_min_upwarp_speed_computations(current_normal, h, i, j, normX, normY, normZ, host_tris, host_norms, dev_tris, dev_norms, puSolutionLookup, wf, platformHWRs);
                     else
-                        run_common_bruteforcer(current_normal, h, i, j, normX, normY, normZ, host_tris, host_norms, dev_tris, dev_norms, puSolutionLookup, wf, normalStages);
+                        run_common_bruteforcer(current_normal, h, i, j, normX, normY, normZ, host_tris, host_norms, dev_tris, dev_norms, puSolutionLookup, wf, normalStages, finalHeightDiffs);
                 }
             }
         }
@@ -481,6 +486,10 @@ int main(int argc, char* argv[])
         wfns.write(normalStages, normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
         free(normalStages);
         wfns.close();
+
+        wffhds.write(reinterpret_cast<const char*>(finalHeightDiffs), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ * sizeof(float));
+        free(finalHeightDiffs);
+        wffhds.close();
     }
     else
     {
