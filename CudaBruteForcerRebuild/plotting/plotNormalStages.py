@@ -70,7 +70,9 @@ if fileName.startswith("norm"):
             for i in range(rangeParameters.nSamplesNY):
                 for j in range(rangeParameters.nSamplesNX):
                     for k in range(rangeParameters.nSamplesNZ):
-                        plotArr[i,j,k] = 9 - min(0.005 * heightDiffArr[i,j,k], 1.0)
+                        plotArr[i,j,k] = 9 - min(0.01 * heightDiffArr[i,j,k], 1.0)
+            
+            print(heightDiffArr)
         except:
             print("Couldn't Locate Height Difference File at \'" + folder + file + "\' or encountered other error; Skipping")
 else:

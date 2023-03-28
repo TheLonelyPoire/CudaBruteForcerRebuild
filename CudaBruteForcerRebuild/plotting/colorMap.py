@@ -124,24 +124,19 @@ CM_HEIGHT_GRADIENT = clrs.LinearSegmentedColormap('heightGradient', {'red': [[0.
                                                                               [0.9999,1.0,0.0],
                                                                               [1.0,0.0,0.0]],
                                                                     'blue': [[0.0,0.0,0.0],
-                                                                             [0.9,0.0,0.0],
-                                                                             [0.9999,1.0,0.0],
                                                                              [1.0,0.0,0.0]]
                                                                               })
 
-CM_HEIGHT_GRADIENT_PARA = clrs.LinearSegmentedColormap('heightGradient', {'red': [[0.0,0.25,0.25],
-                                                                                  [0.0909,0.25,0.0],
+CM_HEIGHT_GRADIENT_PARA = clrs.LinearSegmentedColormap('heightGradient', {'red': [[0.0,0.0,0.0],
                                                                                   [0.909,0.0,0.0],
                                                                                   [0.9999,1.0,1.0],
                                                                                   [1.0,1.0,1.0]],
-                                                                        'green': [[0.0,0.25,0.25],
-                                                                                  [0.0909,0.25,0.0],
+                                                                        'green': [[0.0,0.0,0.0],
                                                                                   [0.909,0.0,0.0],
                                                                                   [0.9999,1.0,0.0],
                                                                                   [1.0,0.0,0.0]],
-                                                                        'blue': [[0.0,0.0,0.0],
-                                                                                 [0.909,0.0,0.0],
-                                                                                 [0.9999,1.0,0.0],
+                                                                        'blue': [[0.0,0.0,0.25],
+                                                                                 [0.0909,0.25,0.0],
                                                                                  [1.0,0.0,0.0]]
                                                                                 })
 
