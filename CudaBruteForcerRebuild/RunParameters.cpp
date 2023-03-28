@@ -24,18 +24,18 @@ int maxQ3 = 1; // Default 2 for non-HAU, 4 for HAU, now set to 1
 int nPUFrames = 3;
 int maxFrames = 60; // 100 for non-HAU, 200 for HAU
 
-float minNX = -0.23556f;
-float maxNX = -0.23532f;
+float minNX = -0.23570f;
+float maxNX = -0.23506f;
 float minNZ = 0.0f;
 float maxNZ = 0.0f;
-float minNY = 0.8331f;
+float minNY = 0.8330f;
 float maxNY = 0.8335f;
-float minNZXSum = 0.63714f;
-float maxNZXSum = 0.63730f;
+float minNZXSum = 0.63690f;
+float maxNZXSum = 0.63754f;
 
-int nSamplesNX = 7;
-int nSamplesNZ = 5;
-int nSamplesNY = 5;
+int nSamplesNX = 9;
+int nSamplesNZ = 9;
+int nSamplesNY = 6;
 
 float deltaX = 0.5f;
 float deltaZ = 0.5f;

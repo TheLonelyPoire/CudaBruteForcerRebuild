@@ -394,12 +394,12 @@ int main(int argc, char* argv[])
 
     if (!computeMaxElevation && !computeMinUpwarp)
     {
-        normalStages = (char*)std::calloc(sizeof(char), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);\
+        normalStages = (char*)std::calloc(sizeof(char), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
 
         finalHeightDiffs = (float*)std::malloc(sizeof(float) * normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
         for (int i = 0; i < normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ; ++i)
         {
-            finalHeightDiffs[i] = 400.0f;
+            finalHeightDiffs[i] = MAX_HEIGHT_DIFFERENCE;
         }
     }
     else

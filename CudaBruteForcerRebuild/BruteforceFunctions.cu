@@ -2216,7 +2216,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         int nPass1SolsCPU = 0;
         int nPass2SolsCPU = 0;
         int nPass3SolsCPU = 0;
-        float currentLowestHeightDiffCPU = 400.0f;
+        float currentLowestHeightDiffCPU = MAX_HEIGHT_DIFFERENCE;
 
         cudaMemcpyToSymbol(nPass1Sols, &nPass1SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
         cudaMemcpyToSymbol(nPass2Sols, &nPass2SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
@@ -2234,7 +2234,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         cudaMemcpyFromSymbol(&nPass2SolsCPU, nPass2Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
         cudaMemcpyFromSymbol(&nPass3SolsCPU, nPass3Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
 
-        cudaMemcpyFromSymbol(&currentLowestHeightDiffCPU, currentLowestHeightDiff, sizeof(float), 0, cudaMemcpyHostToDevice);
+        cudaMemcpyFromSymbol(&currentLowestHeightDiffCPU, currentLowestHeightDiff, sizeof(float), 0, cudaMemcpyDeviceToHost);
 
         if (nPass1SolsCPU > 0)
         {
@@ -2249,7 +2249,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             normalStages[current_normal_index]++;
         }
 
-        finalHeightDiffs[current_normal_index] = currentLowestHeightDiff;
+        finalHeightDiffs[current_normal_index] = currentLowestHeightDiffCPU;
     }
 
     if (n10KSolutionsCPU > 0) {

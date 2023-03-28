@@ -35,14 +35,15 @@ def update_image_plot(implot, img, pauseRate, title=''):
     return implot
 
 
-folderName = "../output/UpwarpRuns/"
-fileName = "minUpwarpSpeeds_2_14_3_40.bin"
+folderName = "../output/"
+fileName = "normalStagesReached_3_27_21_21.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
 
 rangeParameters = getRangeParametersFromFile(getCorrespondingRangeParametersFilename(folderName + fileName))
 useParallelogram = False
+tryUseHeightDifference = True
 
 # Custom Range Parameters
 minNX = -0.213
@@ -60,6 +61,18 @@ useZXSum = True
 
 if fileName.startswith("norm"):
     plotArr = getIntDataFromBinaryFile(fileName, folderName=folderName, nSamplesY=rangeParameters.nSamplesNY, nSamplesX=rangeParameters.nSamplesNX, nSamplesZ=rangeParameters.nSamplesNZ)
+    
+    if tryUseHeightDifference:
+        try:
+            file, folder = getCorrespondingHeightDiffFilenameAndFolderPath(folderName + fileName)
+            heightDiffArr = getFloatDataFromBinaryFile(file, folder, rangeParameters.nSamplesNY, rangeParameters.nSamplesNX, rangeParameters.nSamplesNZ)
+            plotArr = plotArr.astype(float)
+            for i in range(rangeParameters.nSamplesNY):
+                for j in range(rangeParameters.nSamplesNX):
+                    for k in range(rangeParameters.nSamplesNZ):
+                        plotArr[i,j,k] = 9 - min(0.005 * heightDiffArr[i,j,k], 1.0)
+        except:
+            print("Couldn't Locate Height Difference File at \'" + folder + file + "\' or encountered other error; Skipping")
 else:
     plotArr = getFloatDataFromBinaryFile(fileName, folderName=folderName, nSamplesY=rangeParameters.nSamplesNY, nSamplesX=rangeParameters.nSamplesNX, nSamplesZ=rangeParameters.nSamplesNZ)
 
@@ -73,9 +86,10 @@ numStages = 10
 pauseRate = 0.05 
 
 if fileName.startswith("norm"):
-    # colormap = CM_FRACTAL if not useParallelogram else CM_FRACTAL_PARA
-    # colormap = CM_EXTRA_STAGES if not useParallelogram else CM_EXTRA_STAGES_PARA
-    colormap = CM_MARBLER if not useParallelogram else CM_MARBLER_PARA
+    if tryUseHeightDifference:
+        colormap = CM_HEIGHT_GRADIENT if not useParallelogram else CM_HEIGHT_GRADIENT_PARA
+    else:
+        colormap = CM_MARBLER if not useParallelogram else CM_MARBLER_PARA
 elif fileName.startswith("plat"):
     colormap = CM_HWR_BANDS 
 elif fileName.startswith("minUp"):

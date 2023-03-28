@@ -3,6 +3,7 @@
 #include "cuda_runtime.h"
 
 # define M_PI     3.14159265358979323846  /* pi */
+# define MAX_HEIGHT_DIFFERENCE   200.0f;
 
 extern __device__ const short default_triangles[2][3][3];
 extern __device__ const float normal_offsets[4][3];

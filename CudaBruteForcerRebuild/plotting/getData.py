@@ -125,12 +125,22 @@ def getIntDataFromBinaryFile(fileName, folderName="../output/ImportantSolutions/
         return np.array(int_values).reshape((nSamplesY, nSamplesX, nSamplesZ))
     
 
-def getFloatDataFromBinaryFile(fileName, folderName="../output/ElevationRuns/", nSamplesY=0, nSamplesX=0, nSamplesZ=0):
+def getFloatDataFromBinaryFile(fileName, folderName="../output/ImportantSolutions/", nSamplesY=0, nSamplesX=0, nSamplesZ=0):
     with open(folderName + fileName, mode='rb') as file: # b is important -> binary
         if nSamplesX == 0 or nSamplesY == 0 or nSamplesZ == 0:
             return np.fromfile(file, dtype=np.float32)
         
         return np.fromfile(file, dtype=np.float32).reshape((nSamplesY, nSamplesX, nSamplesZ))
+
+
+def getCorrespondingHeightDiffFilenameAndFolderPath(normStagesPath : str):
+    dirIndex = normStagesPath.rfind('/')
+    if not normStagesPath[dirIndex+1:].startswith("norm"):
+        raise ValueError("MUST INPUT NORMAL STAGES FILE PATH")
+    timestampIndex = dirIndex + len("normalStagesReached") + 1
+    fileExtensionIndex = normStagesPath.rfind('.')
+
+    return "finalHeightDifferences" + normStagesPath[timestampIndex:fileExtensionIndex] + ".bin", normStagesPath[:dirIndex+1]
 
 
 def getNormalStagesCoarseRun():
