@@ -951,7 +951,7 @@ __device__ bool test_one_up_position(int solIdx, float* startPosition, float* on
     }
 
     for (int cIdx = minCameraIdx; cIdx <= maxCameraIdx; cIdx++) {
-        int cameraYaw = gArctanTableG[cIdx % 65536];
+        int cameraYaw = gArctanTableG[(8192 + cIdx) % 8192];
 
         float xVel2 = 4.0f * (returnPosition[0] - oneUpPlatformPosition[0]) / (oneUpPlatformNormalY + (q3 - 1));
         float zVel2 = 4.0f * (returnPosition[2] - oneUpPlatformPosition[2]) / (oneUpPlatformNormalY + (q3 - 1));
@@ -2069,7 +2069,7 @@ __global__ void check_speed_angle() {
                         }
 
                         for (int cIdx = minCameraIdx; cIdx <= maxCameraIdx; cIdx++) {
-                            int cameraYaw = gArctanTableG[cIdx % 65536];
+                            int cameraYaw = gArctanTableG[(8192 + cIdx) % 8192];
                             int oupSolIdx = atomicAdd(&nOUPSolutions, 1);
 
                             if (oupSolIdx < MAX_OUP_SOLUTIONS) {

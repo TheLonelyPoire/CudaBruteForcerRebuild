@@ -426,16 +426,15 @@ int main(int argc, char* argv[])
     bool currentPositive;
 
     std::cout << "Delta X: " << deltaNX << "\n";
-    std::cout << "Delta Y: " << deltaNY << "\n";
-
-    if(useZXSum)
+    if (useZXSum)
         std::cout << "Delta XZSum: " << (maxNZXSum - minNZXSum) / (nSamplesNZ - 1) << "\n";
     else
         std::cout << "Delta Z: " << (maxNZ - minNZ) / (nSamplesNZ - 1) << "\n";
+    std::cout << "Delta Y: " << deltaNY << "\n";
 
     std::cout << "Samples X: " << nSamplesNX << "\n";
-    std::cout << "Samples Y: " << nSamplesNY << "\n";
     std::cout << "Samples Z: " << nSamplesNZ << "\n";
+    std::cout << "Samples Y: " << nSamplesNY << "\n";
 
     std::cout << "\n  Startup Complete!\n\nStarting Bruteforcer...\n\n";
 
