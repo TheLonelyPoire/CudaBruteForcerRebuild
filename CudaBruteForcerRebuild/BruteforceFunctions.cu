@@ -1382,7 +1382,7 @@ void run_non_hau_bruteforcer(int g, int h, int i, int j, float normX, float norm
         cudaMemcpyToSymbol(n10KSolutions, &n10KSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
         for (int q = minQ3; q <= maxQ3; q++) {
-            test_pu_solution << < nBlocks, nThreads >> > (q, minQ1, maxQ1, minQ2, maxQ2);
+            test_pu_solution << <nBlocks, nThreads >> > (q, minQ1, maxQ1, 4 * (nPUFrames - 3) + minQ2, 4 * (nPUFrames - 3) + maxQ2);
         }
 
         cudaMemcpyFromSymbol(&n10KSolutionsCPU, n10KSolutions, sizeof(int), 0, cudaMemcpyDeviceToHost);
