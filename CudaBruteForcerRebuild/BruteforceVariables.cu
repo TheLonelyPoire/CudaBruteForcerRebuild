@@ -62,7 +62,7 @@ __device__ float currentLowestHeightDiff = MAX_HEIGHT_DIFFERENCE;
 
 // Common
 
-int nBlocks;
+long long int nBlocks;
 
 int nPlatSolutionsCPU = 0;
 int nUpwarpSolutionsCPU = 0;
