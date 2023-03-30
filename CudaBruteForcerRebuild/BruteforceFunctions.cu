@@ -1942,8 +1942,9 @@ __global__ void test_oup_solution() {
                     double qz = startTriangles[stickSol->floorIdx][(i + 1) % 3][2];
 
                     double t = ((qx - px) * (az - pz) - (qz - pz) * (ax - px)) / ((qz - pz) * (bx - ax) - (qx - px) * (bz - az));
+                    double s = ((bx - ax) * t + (ax - px)) / (qx - px);
 
-                    if (t >= 0 && t <= 1) {
+                    if (t >= 0 && t <= 1 && s >= 0 && s <= 1) {
                         int speedSolIdx = atomicAdd(&nSpeedSolutions, 1);
 
                         if (speedSolIdx < MAX_SPEED_SOLUTIONS) {
