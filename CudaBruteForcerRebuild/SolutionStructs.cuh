@@ -114,8 +114,6 @@ struct OUPSolution {
     int puz;
     int angle;
     int cameraYaw;
-    int nSquishEdges;
-    int squishEdges[3];
 };
 
 // A collection of parameters that define a viable stick solution.
