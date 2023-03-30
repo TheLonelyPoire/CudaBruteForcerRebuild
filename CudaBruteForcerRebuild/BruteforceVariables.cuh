@@ -72,7 +72,7 @@ extern __device__ float currentLowestHeightDiff;
 
 // Common
 
-extern int nBlocks;
+extern long long int nBlocks;
 
 extern int nPlatSolutionsCPU;
 extern int nUpwarpSolutionsCPU;
