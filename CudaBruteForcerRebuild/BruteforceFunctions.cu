@@ -90,6 +90,9 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
         nOUPSolutionsCPU = 0;
         nSpeedSolutionsCPU = 0;
 
+        if(subSolutionPrintingMode == 2)
+            printf("---------------------------------------\nTesting Normal: %g, %g, %g\n  Index: %d, %d, %d, %d\n", normX, normY, normZ, g, h, i, j);
+
         cudaMemcpyToSymbol(nPlatSolutions, &nPlatSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
         nBlocks = (nX * nZ + nThreads - 1) / nThreads;
@@ -101,13 +104,13 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
         if (nPlatSolutionsCPU > 0) {
             normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j] = 1;
 
-           /* printf("---------------------------------------\nTesting Normal: %g, %g, %g\n        Index: %d, %d, %d, %d\n", normX, normY, normZ, g, h, i, j);
-            printf("        # Platform Solutions: %d\n", nPlatSolutionsCPU);*/
-
             if (nPlatSolutionsCPU > MAX_PLAT_SOLUTIONS) {
                 fprintf(stderr, "Warning: Number of platform solutions for this normal has been exceeded. No more solutions for this normal will be recorded. Increase the internal maximum to prevent this from happening.\n");
                 nPlatSolutionsCPU = MAX_PLAT_SOLUTIONS;
             }
+
+            if(subSolutionPrintingMode == 2)
+                printf("  Stage 1 Solutions: %d\n", nPlatSolutionsCPU);
 
             nBlocks = (nPlatSolutionsCPU + nThreads - 1) / nThreads;
 
@@ -120,10 +123,13 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
             cudaDeviceSynchronize();
 
             cudaMemcpyFromSymbol(&nUpwarpSolutionsCPU, nUpwarpSolutions, sizeof(int), 0, cudaMemcpyDeviceToHost);
+
+
         }
         else
         {
-            /*printf("No platform solutions found for normal: %f, %f, %f.\n", normX, normY, normZ);*/
+            if(subSolutionPrintingMode == 2)
+                printf("  Stage 1 Solutions: Failed\n");
         }
 
         if (nUpwarpSolutionsCPU > 0) {
@@ -134,7 +140,8 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
                 nUpwarpSolutionsCPU = MAX_UPWARP_SOLUTIONS;
             }
 
-           /* printf("        # Upwarp Solutions: %d\n", nUpwarpSolutionsCPU); */
+            if(subSolutionPrintingMode == 2)
+                printf("  Stage 2 Solutions: %d\n", nUpwarpSolutionsCPU);
 
             if (!stopAtUpwarp)
             {
@@ -152,7 +159,21 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
         }
         else
         {
-           /* printf("No upwarp solutions found.\n");*/
+            if (subSolutionPrintingMode == 2)
+            {
+                // TODO: Update for more than two solvers
+                printf("  Stage 2 Solutions: Failed\n");
+                printf("  Stage 3 Solutions: Failed\n");
+                printf("  Stage 4 Solutions: Failed\n");
+                if (runHAUSolver)
+                {
+                    printf("  Stage 5 Solutions: Failed\n");
+                    printf("  Stage 6 Pass Count: Failed\n");
+                    printf("  Stage 7 Pass Count: Failed\n");
+                    printf("  Stage 8 Pass Count: Failed\n");
+                    printf("  Stage 9 Solutions: Failed\n");
+                }
+            }
         }
     }
 }
@@ -1387,7 +1408,10 @@ void run_non_hau_bruteforcer(int g, int h, int i, int j, float normX, float norm
             nPUSolutionsCPU++;
         }
 
-        printf("        # PU Solutions : % d\n", nPUSolutionsCPU);
+        if(subSolutionPrintingMode == 1)
+            printf("# PU Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, nPUSolutionsCPU);
+        else if(subSolutionPrintingMode == 2)
+            printf("  Stage 3 Solutions: %d\n", nPlatSolutionsCPU);
 
         cudaMemcpyToSymbol(nPUSolutions, &nPUSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
         cudaMemcpyToSymbol(puSolutions, puSolutionsCPU, nPUSolutionsCPU * sizeof(PUSolution), 0, cudaMemcpyHostToDevice);
@@ -1404,6 +1428,11 @@ void run_non_hau_bruteforcer(int g, int h, int i, int j, float normX, float norm
 
         cudaMemcpyFromSymbol(&n10KSolutionsCPU, n10KSolutions, sizeof(int), 0, cudaMemcpyDeviceToHost);
     }
+    else
+    {
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 3 Solutions: Failed\n");
+    }
 
     if (n10KSolutionsCPU > 0) {
         normalStages[((g * nSamplesNY + h) * nSamplesNX + i) * nSamplesNZ + j] = 4;
@@ -1414,7 +1443,10 @@ void run_non_hau_bruteforcer(int g, int h, int i, int j, float normX, float norm
 
         }
 
-        printf("        # 10k Solutions : %d\n", n10KSolutionsCPU);
+        if (subSolutionPrintingMode == 1)
+            printf("# 10k Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, n10KSolutionsCPU);
+        else if (subSolutionPrintingMode == 2)
+            printf("  Stage 4 Solutions: %d\n", n10KSolutionsCPU);
 
         struct PlatformSolution* platSolutionsCPU = (struct PlatformSolution*)std::malloc(nPlatSolutionsCPU * sizeof(struct PlatformSolution));
         struct UpwarpSolution* upwarpSolutionsCPU = (struct UpwarpSolution*)std::malloc(nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution));
@@ -1454,6 +1486,11 @@ void run_non_hau_bruteforcer(int g, int h, int i, int j, float normX, float norm
         free(tenKSolutionsCPU);
         free(upwarpSolutionsCPU);
         free(platSolutionsCPU);
+    }
+    else
+    {
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 4 Solutions: Failed\n");
     }
 
     free(puSolutionsCPU);
@@ -2155,7 +2192,8 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             nStickSolutionsCPU = MAX_STICK_SOLUTIONS;
         }
 
-        //printf("        # Stick Solutions: %d\n", nStickSolutionsCPU);
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 3 Solutions: %d\n", nStickSolutionsCPU);
 
         cudaMemcpyToSymbol(nOUPSolutions, &nOUPSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
@@ -2172,6 +2210,11 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
 
         cudaMemcpyFromSymbol(&nOUPSolutionsCPU, nOUPSolutions, sizeof(int), 0, cudaMemcpyDeviceToHost);
     }
+    else
+    {
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 3 Solutions: Failed\n");
+    }
 
     if (nOUPSolutionsCPU > 0) {
         normalStages[current_normal_index] = 4;
@@ -2181,7 +2224,8 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             nOUPSolutionsCPU = MAX_OUP_SOLUTIONS;
         }
 
-        /*printf("        # 1-up Platform Solutions: %d\n", nOUPSolutionsCPU);*/
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 4 Solutions: %d\n", nOUPSolutionsCPU);
 
         cudaMemcpyToSymbol(nSpeedSolutions, &nSpeedSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
@@ -2190,6 +2234,11 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         test_oup_solution << <nBlocks, nThreads >> > ();
 
         cudaMemcpyFromSymbol(&nSpeedSolutionsCPU, nSpeedSolutions, sizeof(int), 0, cudaMemcpyDeviceToHost);
+    }
+    else
+    {
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 4 Solutions: Failed\n");
     }
 
     if (nSpeedSolutionsCPU > 0) {
@@ -2201,7 +2250,11 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
 
         }
 
-        printf("# Speed Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, nSpeedSolutionsCPU);
+        if (subSolutionPrintingMode == 1)
+            printf("# Speed Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, nSpeedSolutionsCPU);
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 5 Solutions: %d\n", nSpeedSolutionsCPU);
+
 
         cudaMemcpyToSymbol(n10KSolutionsHAU, &n10KSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
@@ -2232,17 +2285,48 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         if (nPass1SolsCPU > 0)
         {
             normalStages[current_normal_index]++;
+            if (subSolutionPrintingMode == 2)
+                printf("  Stage 6 Pass Count: %d\n", nPass1SolsCPU);
+        }
+        else
+        {
+            if (subSolutionPrintingMode == 2)
+                printf("  Stage 6 Pass Count: Failed\n");
         }
         if (nPass2SolsCPU > 0)
         {
             normalStages[current_normal_index]++;
+            if (subSolutionPrintingMode == 2)
+                printf("  Stage 7 Pass Count: %d\n", nPass2SolsCPU);
+        }
+        else
+        {
+            if (subSolutionPrintingMode == 2)
+                printf("  Stage 7 Pass Count: Failed\n");
         }
         if (nPass3SolsCPU > 0)
         {
             normalStages[current_normal_index]++;
+            if (subSolutionPrintingMode == 2)
+                printf("  Stage 8 Pass Count: %d\n", nPass3SolsCPU);
+        }
+        else
+        {
+            if (subSolutionPrintingMode == 2)
+                printf("  Stage 8 Pass Count: Failed\n");
         }
 
-        finalHeightDiffs[current_normal_index] = currentLowestHeightDiffCPU;
+        finalHeightDiffs[current_normal_index] = currentLowestHeightDiffCPU; 
+    }
+    else
+    {
+        if (subSolutionPrintingMode == 2) 
+        {
+            printf("  Stage 5 Solutions: Failed\n");
+            printf("  Stage 6 Pass Count: Failed\n");
+            printf("  Stage 7 Pass Count: Failed\n");
+            printf("  Stage 8 Pass Count: Failed\n");
+        }
     }
 
     if (n10KSolutionsCPU > 0) {
@@ -2253,7 +2337,11 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             n10KSolutionsCPU = MAX_10K_SOLUTIONS_HAU;
         }
 
-        printf("# 10k Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, n10KSolutionsCPU);
+
+        if (subSolutionPrintingMode == 1)
+            printf("# 10k Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, n10KSolutionsCPU);
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 9 Solutions: %d\n", nSpeedSolutionsCPU);
 
         struct PlatformSolution* platSolutionsCPU = (struct PlatformSolution*)std::malloc(nPlatSolutionsCPU * sizeof(struct PlatformSolution));
         struct UpwarpSolution* upwarpSolutionsCPU = (struct UpwarpSolution*)std::malloc(nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution));
@@ -2303,53 +2391,59 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         free(speedSolutionsCPU);
         free(tenKSolutionsCPU);
     }
-    else if (printOneOffSolutions)
+    else
     {
-        struct PlatformSolution* platSolutionsCPU = (struct PlatformSolution*)std::malloc(nPlatSolutionsCPU * sizeof(struct PlatformSolution));
-        struct UpwarpSolution* upwarpSolutionsCPU = (struct UpwarpSolution*)std::malloc(nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution));
-        struct StickSolution* stickSolutionsCPU = (struct StickSolution*)std::malloc(nStickSolutionsCPU * sizeof(struct StickSolution));
-        struct OUPSolution* oupSolutionsCPU = (struct OUPSolution*)std::malloc(nOUPSolutionsCPU * sizeof(struct OUPSolution));
-        struct SpeedSolution* speedSolutionsCPU = (struct SpeedSolution*)std::malloc(nSpeedSolutionsCPU * sizeof(struct SpeedSolution));
+        if (subSolutionPrintingMode == 2)
+            printf("  Stage 9 Solutions: Failed\n");
 
-        cudaMemcpyFromSymbol(speedSolutionsCPU, speedSolutions, nSpeedSolutionsCPU * sizeof(struct SpeedSolution), 0, cudaMemcpyDeviceToHost);
-        cudaMemcpyFromSymbol(oupSolutionsCPU, oupSolutions, nOUPSolutionsCPU * sizeof(struct OUPSolution), 0, cudaMemcpyDeviceToHost);
-        cudaMemcpyFromSymbol(stickSolutionsCPU, stickSolutions, nStickSolutionsCPU * sizeof(struct StickSolution), 0, cudaMemcpyDeviceToHost);
-        cudaMemcpyFromSymbol(upwarpSolutionsCPU, upwarpSolutions, nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution), 0, cudaMemcpyDeviceToHost);
-        cudaMemcpyFromSymbol(platSolutionsCPU, platSolutions, nPlatSolutionsCPU * sizeof(struct PlatformSolution), 0, cudaMemcpyDeviceToHost);
+        if (printOneOffSolutions)
+        {
+            struct PlatformSolution* platSolutionsCPU = (struct PlatformSolution*)std::malloc(nPlatSolutionsCPU * sizeof(struct PlatformSolution));
+            struct UpwarpSolution* upwarpSolutionsCPU = (struct UpwarpSolution*)std::malloc(nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution));
+            struct StickSolution* stickSolutionsCPU = (struct StickSolution*)std::malloc(nStickSolutionsCPU * sizeof(struct StickSolution));
+            struct OUPSolution* oupSolutionsCPU = (struct OUPSolution*)std::malloc(nOUPSolutionsCPU * sizeof(struct OUPSolution));
+            struct SpeedSolution* speedSolutionsCPU = (struct SpeedSolution*)std::malloc(nSpeedSolutionsCPU * sizeof(struct SpeedSolution));
 
-        for (int l = 0; l < nSpeedSolutionsCPU; l++) {
-            struct SpeedSolution* speedSol = &(speedSolutionsCPU[l]);
-            struct OUPSolution* oupSol = &(oupSolutionsCPU[speedSol->oupSolutionIdx]);
-            struct StickSolution* stickSol = &(stickSolutionsCPU[oupSol->stickSolutionIdx]);
-            struct UpwarpSolution* uwSol = &(upwarpSolutionsCPU[stickSol->upwarpSolutionIdx]);
-            struct PlatformSolution* platSol = &(platSolutionsCPU[uwSol->platformSolutionIdx]);
+            cudaMemcpyFromSymbol(speedSolutionsCPU, speedSolutions, nSpeedSolutionsCPU * sizeof(struct SpeedSolution), 0, cudaMemcpyDeviceToHost);
+            cudaMemcpyFromSymbol(oupSolutionsCPU, oupSolutions, nOUPSolutionsCPU * sizeof(struct OUPSolution), 0, cudaMemcpyDeviceToHost);
+            cudaMemcpyFromSymbol(stickSolutionsCPU, stickSolutions, nStickSolutionsCPU * sizeof(struct StickSolution), 0, cudaMemcpyDeviceToHost);
+            cudaMemcpyFromSymbol(upwarpSolutionsCPU, upwarpSolutions, nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution), 0, cudaMemcpyDeviceToHost);
+            cudaMemcpyFromSymbol(platSolutionsCPU, platSolutions, nPlatSolutionsCPU * sizeof(struct PlatformSolution), 0, cudaMemcpyDeviceToHost);
 
-            wf << normX << ", " << normY << ", " << normZ << ", ";
-            wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-            wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-            wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-            wf << platSol->returnPosition[0] << ", " << platSol->returnPosition[1] << ", " << platSol->returnPosition[2] << ", ";
-            wf << speedSol->startSpeed << ", " << "N/A" << ", " << "N/A" << ", ";
-            wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-            wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-            wf << oupSol->angle << ", ";
-            wf << 0 << ", " << stickSol->stickY << ", ";
-            wf << oupSol->cameraYaw << ", ";
-            wf << host_norms[3 * stickSol->floorIdx] << ", " << host_norms[3 * stickSol->floorIdx + 1] << ", " << host_norms[3 * stickSol->floorIdx + 2] << ", ";
-            wf << platSol->nFrames << ", ";
-            wf << platSol->endNormal[0] << ", " << platSol->endNormal[1] << ", " << platSol->endNormal[2] << ", ";
-            wf << platSol->endPosition[0] << ", " << platSol->endPosition[1] << ", " << platSol->endPosition[2] << ", ";
-            wf << uwSol->upwarpPosition[0] << ", " << uwSol->upwarpPosition[1] << ", " << uwSol->upwarpPosition[2] << ", ";
-            wf << uwSol->pux << ", " << uwSol->puz;
+            for (int l = 0; l < nSpeedSolutionsCPU; l++) {
+                struct SpeedSolution* speedSol = &(speedSolutionsCPU[l]);
+                struct OUPSolution* oupSol = &(oupSolutionsCPU[speedSol->oupSolutionIdx]);
+                struct StickSolution* stickSol = &(stickSolutionsCPU[oupSol->stickSolutionIdx]);
+                struct UpwarpSolution* uwSol = &(upwarpSolutionsCPU[stickSol->upwarpSolutionIdx]);
+                struct PlatformSolution* platSol = &(platSolutionsCPU[uwSol->platformSolutionIdx]);
 
-            wf << std::endl;
+                wf << normX << ", " << normY << ", " << normZ << ", ";
+                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
+                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
+                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
+                wf << platSol->returnPosition[0] << ", " << platSol->returnPosition[1] << ", " << platSol->returnPosition[2] << ", ";
+                wf << speedSol->startSpeed << ", " << "N/A" << ", " << "N/A" << ", ";
+                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
+                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
+                wf << oupSol->angle << ", ";
+                wf << 0 << ", " << stickSol->stickY << ", ";
+                wf << oupSol->cameraYaw << ", ";
+                wf << host_norms[3 * stickSol->floorIdx] << ", " << host_norms[3 * stickSol->floorIdx + 1] << ", " << host_norms[3 * stickSol->floorIdx + 2] << ", ";
+                wf << platSol->nFrames << ", ";
+                wf << platSol->endNormal[0] << ", " << platSol->endNormal[1] << ", " << platSol->endNormal[2] << ", ";
+                wf << platSol->endPosition[0] << ", " << platSol->endPosition[1] << ", " << platSol->endPosition[2] << ", ";
+                wf << uwSol->upwarpPosition[0] << ", " << uwSol->upwarpPosition[1] << ", " << uwSol->upwarpPosition[2] << ", ";
+                wf << uwSol->pux << ", " << uwSol->puz;
+
+                wf << std::endl;
+            }
+
+            free(platSolutionsCPU);
+            free(upwarpSolutionsCPU);
+            free(stickSolutionsCPU);
+            free(oupSolutionsCPU);
+            free(speedSolutionsCPU);
         }
-
-        free(platSolutionsCPU);
-        free(upwarpSolutionsCPU);
-        free(stickSolutionsCPU);
-        free(oupSolutionsCPU);
-        free(speedSolutionsCPU);
     }
 }
 

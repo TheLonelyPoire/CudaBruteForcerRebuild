@@ -294,6 +294,10 @@ int main(int argc, char* argv[])
         }
     }
 
+    const float deltaNX = (nSamplesNX > 1) ? (maxNX - minNX) / (nSamplesNX - 1) : 0;
+    const float deltaNZ = (nSamplesNZ > 1) ? (maxNZ - minNZ) / (nSamplesNZ - 1) : 0;
+    const float deltaNY = (nSamplesNY > 1) ? (maxNY - minNY) / (nSamplesNY - 1) : 0;
+    const float deltaNZXSum = (nSamplesNZ > 1) ? (maxNZXSum - minNZXSum) / (nSamplesNZ - 1) : 0;
 
     if (verbose) {
         printf("Max Frames: %d\n", maxFrames);
@@ -312,6 +316,12 @@ int main(int argc, char* argv[])
         printf("X Spacing: %g\n", deltaX);
         printf("Z Spacing: %g\n", deltaZ);
         printf("Platform Position: (%g, %g, %g)\n", platformPos[0], platformPos[1], platformPos[2]);
+        printf("Delta X: %f\n", deltaNX);
+        if (useZXSum)
+            printf("Delta ZXSum: %f\n", deltaNZXSum);
+        else
+            printf("Delta Z: %f\n", deltaNZ);
+        printf("Delta Y: %f\n", deltaNY);
         printf("\n");
     }
 
@@ -351,11 +361,6 @@ int main(int argc, char* argv[])
 
     cudaMalloc((void**)&dev_tris, 18 * sizeof(short));
     cudaMalloc((void**)&dev_norms, 6 * sizeof(float));
-
-    const float deltaNX = (nSamplesNX > 1) ? (maxNX - minNX) / (nSamplesNX - 1) : 0;
-    const float deltaNZ = (nSamplesNZ > 1) ? (maxNZ - minNZ) / (nSamplesNZ - 1) : 0;
-    const float deltaNY = (nSamplesNY > 1) ? (maxNY - minNY) / (nSamplesNY - 1) : 0;
-    const float deltaNZXSum = (nSamplesNZ > 1) ? (maxNZXSum - minNZXSum) / (nSamplesNZ - 1) : 0;
 
     // Solution CSV output filestream
     std::ofstream wf(outFileSolutionData);
@@ -408,6 +413,8 @@ int main(int argc, char* argv[])
     // Writing run parameters to separate .txt file
     write_run_parameters(wfrp, timestamp);
 
+    wfrp.close();
+
     if (runHAUSolver)
         setup_output_hau(wf);
     else
@@ -420,17 +427,6 @@ int main(int argc, char* argv[])
     int current_normal = 0;
     float currentZXSum;
     bool currentPositive;
-
-    std::cout << "Delta X: " << deltaNX << "\n";
-    if (useZXSum)
-        std::cout << "Delta XZSum: " << (maxNZXSum - minNZXSum) / (nSamplesNZ - 1) << "\n";
-    else
-        std::cout << "Delta Z: " << (maxNZ - minNZ) / (nSamplesNZ - 1) << "\n";
-    std::cout << "Delta Y: " << deltaNY << "\n";
-
-    std::cout << "Samples X: " << nSamplesNX << "\n";
-    std::cout << "Samples Z: " << nSamplesNZ << "\n";
-    std::cout << "Samples Y: " << nSamplesNY << "\n";
 
     std::cout << "\n  Startup Complete!\n\nStarting Bruteforcer...\n\n";
 
@@ -445,7 +441,8 @@ int main(int argc, char* argv[])
         for (int h = 0; h < nSamplesNY; h++) {
             for (int i = 0; i < nSamplesNX; i++) {
 
-                std::cout << ((current_normal * nSamplesNY + h) * nSamplesNX + i) << " / " << normals.size() * nSamplesNY * nSamplesNX << "\r";
+                if(subSolutionPrintingMode < 2)
+                    std::cout << ((current_normal * nSamplesNY + h) * nSamplesNX + i) << " / " << normals.size() * nSamplesNY * nSamplesNX << "\r";
 
                 for (int j = 0; j < nSamplesNZ; j++) {
                     float normX = (*normalIter)[0] + minNX + i * deltaNX;
@@ -507,7 +504,7 @@ int main(int argc, char* argv[])
     int minutes = get_minutes_from_seconds(running_time.count());
     double seconds = running_time.count() - 3600 * hours - 60 * minutes;
 
-    wfrp << "Total Running Time: ";
+    /*wfrp << "Total Running Time: ";
     
     if (hours > 0)
     {
@@ -518,9 +515,7 @@ int main(int argc, char* argv[])
         wfrp << minutes << " minute(s) ";
     }
     
-    wfrp << seconds << " second(s)" << '\n';
-
-    wfrp.close();
+    wfrp << seconds << " second(s)" << '\n';*/
 
     return 0;
 }

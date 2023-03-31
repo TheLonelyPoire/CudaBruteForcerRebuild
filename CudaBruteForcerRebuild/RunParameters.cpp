@@ -24,18 +24,18 @@ int maxQ3 = 1; // Default 2 for non-HAU, 4 for HAU, now set to 1
 int nPUFrames = 3;
 int maxFrames = 60; // 100 for non-HAU, 200 for HAU
 
-float minNX = -0.23570f;
-float maxNX = -0.23506f;
+float minNX = 0.19f;
+float maxNX = 0.25f;
 float minNZ = 0.0f;
 float maxNZ = 0.0f;
-float minNY = 0.8330f;
-float maxNY = 0.8335f;
-float minNZXSum = 0.63690f;
-float maxNZXSum = 0.63754f;
+float minNY = 0.802f;
+float maxNY = 0.802f;
+float minNZXSum = 0.57f;
+float maxNZXSum = 0.64f;
 
-int nSamplesNX = 9;
-int nSamplesNZ = 9;
-int nSamplesNY = 6;
+int nSamplesNX = 241;
+int nSamplesNZ = 281;
+int nSamplesNY = 1;
 
 float deltaX = 0.5f;
 float deltaZ = 0.5f;
@@ -44,5 +44,7 @@ std::string normalsInput = "";
 
 Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f };
 
-bool verbose = false;
+bool verbose = true;
 
+// Flag for whether to print sub-solutions (0 for none, 1 for second-to-last sub-solutions only, 2 for all sub-solutions).
+int subSolutionPrintingMode = 1;

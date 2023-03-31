@@ -35,8 +35,8 @@ def update_image_plot(implot, img, pauseRate, title=''):
     return implot
 
 
-folderName = "../output/"
-fileName = "normalStagesReached_3_27_23_55.bin"
+folderName = "../output/ImportantSolutions/"
+fileName = "normalStagesReached_3_30_22_3.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
@@ -70,7 +70,8 @@ if fileName.startswith("norm"):
             for i in range(rangeParameters.nSamplesNY):
                 for j in range(rangeParameters.nSamplesNX):
                     for k in range(rangeParameters.nSamplesNZ):
-                        plotArr[i,j,k] = 9 - min(0.01 * heightDiffArr[i,j,k], 1.0)
+                        if(plotArr[i,j,k] == 8.0):
+                            plotArr[i,j,k] = 9 - min(0.01 * heightDiffArr[i,j,k], 1.0)
             
             print(heightDiffArr)
         except:

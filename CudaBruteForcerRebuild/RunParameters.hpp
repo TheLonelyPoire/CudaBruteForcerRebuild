@@ -83,3 +83,6 @@ extern Vec3f platformPos;
 
 // Flag for whether to print additional run information (this is less useful now that a run parameter output file is auto-generated).
 extern bool verbose;
+
+// Flag for whether to print sub-solutions (0 for none, 1 for second-to-last sub-solutions only, 2 for all sub-solutions).
+extern int subSolutionPrintingMode;

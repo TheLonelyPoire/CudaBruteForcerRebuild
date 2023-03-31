@@ -61,8 +61,8 @@ void write_run_parameters(std::ofstream& wfrp, std::string timestamp)
     }
 
     wfrp << "nSamplesNX: " << nSamplesNX << '\n';
-    wfrp << "nSamplesNZ: " << nSamplesNZ << "\n";
-    wfrp << "nSamplesNY: " << nSamplesNY << '\n\n';
+    wfrp << "nSamplesNZ: " << nSamplesNZ << '\n';
+    wfrp << "nSamplesNY: " << nSamplesNY << "\n\n";
 
     wfrp << "deltaX: " << deltaX << '\n';
     wfrp << "deltaZ: " << deltaZ << "\n\n";
