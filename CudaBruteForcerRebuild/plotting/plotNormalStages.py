@@ -36,8 +36,8 @@ def update_image_plot(implot, img, pauseRate : float, colmap : clrs.LinearSegmen
     return implot
 
 
-folderName = "../output/ImportantSolutions/"
-fileName = "normalStagesReached_3_30_22_3.bin"
+folderName = "../output/"
+fileName = "normalStagesReached_3_31_0_31.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
@@ -81,9 +81,9 @@ else:
     plotArr = getFloatDataFromBinaryFile(fileName, folderName=folderName, nSamplesY=rangeParameters.nSamplesNY, nSamplesX=rangeParameters.nSamplesNX, nSamplesZ=rangeParameters.nSamplesNZ)
 
 # Load pre-existing run
-rangeParameters = RP_FINER_EXPANDED_RUN
-plotArr = NS_FINER_EXPANDED_RUN
-foundHeightDifference = False
+# rangeParameters = RP_FINER_EXPANDED_RUN
+# plotArr = NS_FINER_EXPANDED_RUN
+# foundHeightDifference = False
 
 if(useParallelogram):
     plotArr = getDataAsParallelogram(plotArr)
