@@ -331,6 +331,32 @@ def getDataAsParallelogram(normsArray : np.ndarray, const=-1):
 
     return newNormsArray
 
+def getStitchedRunData(fileNames, folderName, nSamplesY : int, nSamplesX : int, nSamplesZ : int, stitchAxis=0):
+    normalsArr = np.zeros((nSamplesY, nSamplesX, nSamplesZ))
+    
+    totalCount = 0
+    for fileName in fileNames:
+        with open(folderName + fileName, mode='rb') as file: # b is important -> binary
+            fileContent = file.read()
+
+        int_values_array = np.array([i for i in fileContent])
+
+        if stitchAxis == 0:
+            currentCount = int(int_values_array.size / nSamplesX / nSamplesZ)
+            normalsArr[totalCount:totalCount+currentCount,:,:] = np.reshape(int_values_array, (currentCount, nSamplesX, nSamplesZ))
+        elif stitchAxis == 1:
+            currentCount = int_values_array.size / nSamplesY / nSamplesZ
+            normalsArr[:,totalCount:totalCount+currentCount,:] = np.reshape(int_values_array, (nSamplesY, currentCount, nSamplesZ))
+        elif stitchAxis == 2:
+            currentCount = int_values_array.size / nSamplesY / nSamplesX
+            normalsArr[:,:,totalCount:totalCount+currentCount] = np.reshape(int_values_array, (nSamplesY, nSamplesX, currentCount))
+        else:
+            raise ValueError("Stitch Axis must be between 0 and 2.")
+ 
+        totalCount += currentCount
+
+    return normalsArr
+
 
 RP_COARSE_RUN = RangeParameters(-0.25, -0.17, 0.56, 0.64, 0.75, 0.9, 81, 81, 151, True)
 
@@ -345,6 +371,8 @@ NS_FINER_RUN = getNormalStagesFinerRun()
 RP_FINER_EXPANDED_RUN = RangeParameters(-0.25, -0.19, 0.57, 0.64, 0.79, 0.9, 241, 281, 221, True)
 
 NS_FINER_EXPANDED_RUN = getNormalStagesExpandedFinerRun()
+
+
 
 
 

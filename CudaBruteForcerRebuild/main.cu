@@ -165,14 +165,21 @@ int main(int argc, char* argv[])
             printf("               Default: %g\n", deltaZ);
             printf("-p <platform_x> <platform_y> <platform_z>: Position of the pyramid platform.\n");
             printf("                                           Default: %g %g %g\n", platformPos[0], platformPos[1], platformPos[2]);
+            printf("-hau <0 or 1>: Flag for whether to run the HAU-Aligned solver or non-HAU-Aligned solver (0 for non-HAU-Aligned, 1 for HAU-Aligned).\n");
+            printf("               Default: %i\n", runHAUSolver);
             printf("-ni: Optional path to a list of normals around which to sample. If left empty, no list of normals is used, and samples are displaced from (0,0,0).\n");
             printf("    Default: %s\n", normalsInput.c_str()); 
             printf("-o: Path to the output file.\n");
             printf("    Default: %s\n", outFileSolutionData.c_str());
             printf("-rp: Path to the run parameters file.\n");
-            printf("    Default: %s\n", outFileRunParams.c_str());
+            printf("     Default: %s\n", outFileRunParams.c_str());
             printf("-sum <0 or 1>: Flag for whether to parameterize by Z or by ZXSum (0 for Z, 1 for ZXSum).\n");
-            printf("    Default: %i\n", useZXSum);
+            printf("               Default: %i\n", useZXSum);
+            printf("-posZ <0 or 1>: Flag for whether to use postive Z or negative Z (0 for -Z, 1 for +Z).\n");
+            printf("                Only used when parameterizing by ZXSum instead of Z.\n");
+            printf("                Default: %i\n", usePositiveZ);
+            printf("-ssp <0, 1, or 2>: Printing mode for subsolutions (0 for no subsolution printing, 1 for minimal printing, 2 for full printing).\n");
+            printf("                   Default: %i\n", subSolutionPrintingMode);
             printf("-t <threads>: Number of CUDA threads to assign to the program.\n");
             printf("              Default: %d\n", nThreads);
             printf("-m <memory>: Amount of GPU memory to assign to the program.\n");
@@ -273,6 +280,10 @@ int main(int argc, char* argv[])
             platformPos[2] = std::stof(argv[i + 3]);
             i += 3;
         }
+        else if (!strcmp(argv[i], "-hau")) {
+            runHAUSolver = std::stoi(argv[i + 1]);
+            i += 1;
+        }
         else if (!strcmp(argv[i], "-ni")) {
             normalsInput = argv[i + 1];
             i += 1;
@@ -287,6 +298,14 @@ int main(int argc, char* argv[])
         }
         else if (!strcmp(argv[i], "-sum")) {
             useZXSum = std::stoi(argv[i + 1]);
+            i += 1;
+        }
+        else if (!strcmp(argv[i], "-posZ")) {
+            usePositiveZ = std::stoi(argv[i + 1]);
+            i += 1;
+        }
+        else if (!strcmp(argv[i], "-ssp")) {
+            subSolutionPrintingMode = std::stoi(argv[i + 1]);
             i += 1;
         }
         else if (!strcmp(argv[i], "-v")) {
