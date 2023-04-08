@@ -1557,10 +1557,13 @@ void setup_output_non_hau(std::ofstream& wf)
 // HAU-Aligned Functions
 
 __global__ void test_speed_solution() {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    long long int idx = (long long int)blockIdx.x * (long long int)blockDim.x + (long long int)threadIdx.x; // Straining
 
-    if (idx < min(nSpeedSolutions, MAX_SPEED_SOLUTIONS)) {
-        struct SpeedSolution* speedSol = &(speedSolutions[idx]);
+    if (idx < (long long int)min(nSpeedSolutions, MAX_SPEED_SOLUTIONS) * 2048) { // Straining
+
+        int solIdx = idx / 2048; // Straining
+
+        struct SpeedSolution* speedSol = &(speedSolutions[solIdx]); // Straining
         struct OUPSolution* oupSol = &(oupSolutions[speedSol->oupSolutionIdx]);
         struct StickSolution* stickSol = &(stickSolutions[oupSol->stickSolutionIdx]);
         struct UpwarpSolution* uwSol = &(upwarpSolutions[stickSol->upwarpSolutionIdx]);
@@ -1574,6 +1577,23 @@ __global__ void test_speed_solution() {
         float oneUpPlatformZMax = stickSol->xDir == 0 ? oneUpPlatformZMaxRight : oneUpPlatformZMaxLeft;
         float oneUpPlatformYMin = stickSol->xDir == 0 ? oneUpPlatformYMinRight : oneUpPlatformYMinLeft;
         float oneUpPlatformYMax = stickSol->xDir == 0 ? oneUpPlatformYMaxRight : oneUpPlatformYMaxLeft;
+        
+        int strainMag = idx % 64; // Straining
+        int strainDYaw = (2 * (idx - strainMag)) % 4096; // Straining
+        strainMag = strainMag == 0 ? 0 : strainMag + 1; // Straining
+
+        float startSpeedX = speedSol->startSpeed * gSineTableG[(oupSol->angle) / 16]; // Straining
+        float startSpeedZ = speedSol->startSpeed * gCosineTableG[(oupSol->angle) / 16]; // Straining
+
+        float strainRho = ((strainMag / 64.0f) * (strainMag / 64.0f)) * 32.0f; // Straining
+        float strainForwards = (strainRho / 32.0f) * gCosineTableG[strainDYaw] * 1.5f; // Straining
+        float strainSideways = (strainRho / 32.0f) * gSineTableG[strainDYaw] * 10.0f; // Straining
+        int sideAngle = (oupSol->angle + 16384) % 65536; // Straining
+
+        float frame2Speed = ((speedSol->startSpeed - 0.35f) + strainForwards) - 1.0f;
+        float frame2SpeedX = (frame2Speed * gSineTableG[(oupSol->angle) / 16]) + (strainSideways * gSineTableG[sideAngle / 16]); // Straining
+        float frame2SpeedZ = (frame2Speed * gCosineTableG[(oupSol->angle) / 16]) + (strainSideways * gCosineTableG[sideAngle / 16]); // Straining
+
 
         float relY = stickSol->stickY + 6.0f;
         float intendedMag = (relY * relY / 128.0f);
@@ -1582,22 +1602,19 @@ __global__ void test_speed_solution() {
         int intendedDYaw = (65536 + intendedYaw - oupSol->angle) % 65536;
 
         float lossFactor = gCosineTableG[intendedDYaw / 16];
-        lossFactor *= 0.5f + 0.5f * speedSol->startSpeed / 100.0f;
+        lossFactor *= 0.5f + 0.5f * frame2Speed / 100.0f; // Straining
         lossFactor = intendedMag / 32.0f * lossFactor * 0.02f + 0.92f;
 
-        float startSpeedX = speedSol->startSpeed * gSineTableG[(oupSol->angle) / 16];
-        float startSpeedZ = speedSol->startSpeed * gCosineTableG[(oupSol->angle) / 16];
-
-        float returnSpeedX = startSpeedX;
-        float returnSpeedZ = startSpeedZ;
+        float returnSpeedX = frame2SpeedX; // Straining
+        float returnSpeedZ = frame2SpeedZ; // Straining
 
         returnSpeedX += returnSpeedZ * (intendedMag / 32.0f) * gSineTableG[intendedDYaw / 16] * 0.05f;
         returnSpeedZ -= returnSpeedX * (intendedMag / 32.0f) * gSineTableG[intendedDYaw / 16] * 0.05f;
 
         float newSpeed = sqrtf(returnSpeedX * returnSpeedX + returnSpeedZ * returnSpeedZ);
 
-        returnSpeedX = returnSpeedX * speedSol->startSpeed / newSpeed;
-        returnSpeedZ = returnSpeedZ * speedSol->startSpeed / newSpeed;
+        returnSpeedX = returnSpeedX * frame2Speed / newSpeed; // Straining
+        returnSpeedZ = returnSpeedZ * frame2Speed / newSpeed; // Straining
 
         returnSpeedX += 7.0f * oneUpPlatformNormalX;
 
@@ -1672,16 +1689,16 @@ __global__ void test_speed_solution() {
                     int q2 = stickSol->q1q2 - q1;
 
                     float frame1Position[3];
-                    frame1Position[0] = oneUpPlatformPosition[0] - q2 * startSpeedX / 4.0;
-                    frame1Position[2] = oneUpPlatformPosition[2] - q2 * startSpeedZ / 4.0;
+                    frame1Position[0] = oneUpPlatformPosition[0] - q2 * frame2SpeedX / 4.0; // Straining
+                    frame1Position[2] = oneUpPlatformPosition[2] - q2 * frame2SpeedZ / 4.0; // Straining
 
                     float intendedPosition[3];
                     intendedPosition[0] = frame1Position[0];
                     intendedPosition[2] = frame1Position[2];
 
                     for (int j = 1; j <= q2; j++) {
-                        intendedPosition[0] = intendedPosition[0] + startSpeedX / 4.0;
-                        intendedPosition[2] = intendedPosition[2] + startSpeedZ / 4.0;
+                        intendedPosition[0] = intendedPosition[0] + frame2SpeedX / 4.0; // Straining
+                        intendedPosition[2] = intendedPosition[2] + frame2SpeedZ / 4.0; // Straining
                     }
 
                     frame1Position[0] = frame1Position[0] - (intendedPosition[0] - oneUpPlatformPosition[0]);
@@ -1762,7 +1779,7 @@ __global__ void test_speed_solution() {
                         if (fallTest && intendedPosition[1] < oneUpPlatformPosition[1]) {
                             frame1Position[1] = intendedPosition[1];
 
-                            printf("---------------------------------------\nFound Solution:\n---------------------------------------\n    Start Position: %.10g, %.10g, %.10g\n    Frame 1 Position: %.10g, %.10g, %.10g\n    Frame 2 Position: %.10g, %.10g, %.10g\n    Return Position: %.10g, %.10g, %.10g\n    PU Route Speed: %.10g (x=%.10g, z=%.10g)\n    PU Return Speed: %.10g (x=%.10g, z=%.10g)\n    Frame 1 Q-steps: %d\n    Frame 2 Q-steps: %d\n    Frame 3 Q-steps: %d\n", startPosition[0], startPosition[1], startPosition[2], frame1Position[0], frame1Position[1], frame1Position[2], oneUpPlatformPosition[0], oneUpPlatformPosition[1], oneUpPlatformPosition[2], platSol->returnPosition[0], platSol->returnPosition[1], platSol->returnPosition[2], speedSol->startSpeed, startSpeedX, startSpeedZ, returnSpeed, returnSpeedX, returnSpeedZ, q1, q2, stickSol->q3);
+                            printf("---------------------------------------\nFound Solution:\n---------------------------------------\n    Start Position: %.10g, %.10g, %.10g\n    Frame 1 Position: %.10g, %.10g, %.10g\n    Frame 2 Position: %.10g, %.10g, %.10g\n    Return Position: %.10g, %.10g, %.10g\n    PU Route Speed: %.10g (x=%.10g, z=%.10g)\n    PU Return Speed: %.10g (x=%.10g, z=%.10g)\n    Frame 1 Q-steps: %d\n    Frame 2 Q-steps: %d\n    Frame 3 Q-steps: %d\n    Strain Mag: %d\n    StrainHAUAngle: %d\n", startPosition[0], startPosition[1], startPosition[2], frame1Position[0], frame1Position[1], frame1Position[2], oneUpPlatformPosition[0], oneUpPlatformPosition[1], oneUpPlatformPosition[2], platSol->returnPosition[0], platSol->returnPosition[1], platSol->returnPosition[2], speedSol->startSpeed, startSpeedX, startSpeedZ, returnSpeed, returnSpeedX, returnSpeedZ, q1, q2, stickSol->q3, strainMag, strainDYaw); // Straining
                             printf("    Frame 1 Angle: %d\n    10k Stick X: %d\n    10k Stick Y: %d\n    10k Camera Yaw: %d\n    Start Floor Normal: %.10g, %.10g, %.10g\n", oupSol->angle, 0, stickSol->stickY, oupSol->cameraYaw, startNormals[stickSol->floorIdx][0], startNormals[stickSol->floorIdx][1], startNormals[stickSol->floorIdx][2]);
                             printf("---------------------------------------\n    Tilt Frames: %d\n    Post-Tilt Platform Normal: %.10g, %.10g, %.10g\n    Post-Tilt Position: %.10g, %.10g, %.10g\n    Post-Upwarp Position: %.10g, %.10g, %.10g\n    Upwarp PU X: %d\n    Upwarp PU Z: %d\n---------------------------------------\n\n\n", platSol->nFrames, platSol->endNormal[0], platSol->endNormal[1], platSol->endNormal[2], platSol->endPosition[0], platSol->endPosition[1], platSol->endPosition[2], uwSol->upwarpPosition[0], uwSol->upwarpPosition[1], uwSol->upwarpPosition[2], uwSol->pux, uwSol->puz);
 
@@ -1770,7 +1787,7 @@ __global__ void test_speed_solution() {
 
                             if (tenKSolIdx < MAX_10K_SOLUTIONS_HAU) {
                                 struct TenKSolutionHAU solution;
-                                solution.speedSolutionIdx = idx;
+                                solution.speedSolutionIdx = solIdx; // Straining
                                 solution.startPosition[0] = startPosition[0];
                                 solution.startPosition[1] = startPosition[1];
                                 solution.startPosition[2] = startPosition[2];
@@ -1787,6 +1804,8 @@ __global__ void test_speed_solution() {
                                 solution.returnSpeed = returnSpeed;
                                 solution.returnSpeedX = returnSpeedX;
                                 solution.returnSpeedZ = returnSpeedZ;
+                                solution.strainMag = strainMag;
+                                solution.strainDYaw = strainDYaw;
                                 tenKSolutionsHAU[tenKSolIdx] = solution;
                             }
                         }
@@ -2080,17 +2099,19 @@ __global__ void check_speed_angle() {
                 if (inBoundsTest) {
                     float startSpeedX = stickSol->startSpeed * gSineTableG[hau];
                     float startSpeedZ = stickSol->startSpeed * gCosineTableG[hau];
+                    float frame1X = oupX - (startSpeedX) * ((stickSol->q1q2 - 1.0f) / 4.0); // Straining
+                    float frame1Z = oupZ - (startSpeedZ) * ((stickSol->q1q2 - 1.0f) / 4.0); // Straining
 
                     int minCameraYaw = 0;
                     int maxCameraYaw = 0;
 
-                    float oneUpPlatformPosition[3] = { oupX, platSol->returnPosition[1], oupZ };
+                    float frame1Position[3] = { frame1X, platSol->returnPosition[1], frame1Z }; // Straining
 
-                    int refCameraYaw = calculate_camera_yaw(oneUpPlatformPosition, cameraPositions[0]);
+                    int refCameraYaw = calculate_camera_yaw(frame1Position, cameraPositions[0]); // Straining
                     refCameraYaw = (65536 + refCameraYaw) % 65536;
 
                     for (int k = 1; k < 4; k++) {
-                        int cameraYaw = calculate_camera_yaw(oneUpPlatformPosition, cameraPositions[k]);
+                        int cameraYaw = calculate_camera_yaw(frame1Position, cameraPositions[k]); // Straining
                         cameraYaw = (short)(cameraYaw - refCameraYaw);
                         minCameraYaw = min(minCameraYaw, cameraYaw);
                         maxCameraYaw = max(maxCameraYaw, cameraYaw);
@@ -2270,7 +2291,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
 
         cudaMemcpyToSymbol(currentLowestHeightDiff, &currentLowestHeightDiffCPU, sizeof(float), 0, cudaMemcpyHostToDevice);
 
-        nBlocks = (nSpeedSolutionsCPU + nThreads - 1) / nThreads;
+        nBlocks = (2048 * (long long int)nSpeedSolutionsCPU + nThreads - 1) / nThreads; // Straining
 
         test_speed_solution << <nBlocks, nThreads >> > ();
 
@@ -2373,6 +2394,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             wf << speedSol->startSpeed << ", " << tenKSol->startSpeedX << ", " << tenKSol->startSpeedZ << ", ";
             wf << tenKSol->returnSpeed << ", " << tenKSol->returnSpeedX << ", " << tenKSol->returnSpeedZ << ", ";
             wf << tenKSol->frame1QSteps << ", " << tenKSol->frame2QSteps << ", " << stickSol->q3 << ", ";
+            wf << tenKSol->strainMag << ", " << tenKSol->strainDYaw << ", "; // Straining
             wf << oupSol->angle << ", ";
             wf << 0 << ", " << stickSol->stickY << ", ";
             wf << oupSol->cameraYaw << ", ";
@@ -2502,6 +2524,7 @@ void setup_output_hau(std::ofstream& wf)
     wf << "Pre-10K Speed, Pre-10K X Velocity, Pre-10K Z Velocity, ";
     wf << "Return Speed, Return X Velocity, Return Z Velocity, ";
     wf << "Frame 1 Q-steps, Frame 2 Q-steps, Frame 3 Q-steps, ";
+    wf << "Strain Magnitude, Strain DYaw, ";
     wf << "Frame 1 Angle, ";
     wf << "10K Stick X, 10K Stick Y, ";
     wf << "10K Camera Yaw, ";

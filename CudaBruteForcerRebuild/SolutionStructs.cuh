@@ -99,6 +99,8 @@ struct TenKSolutionHAU {
     float returnSpeed;
     float returnSpeedX;
     float returnSpeedZ;
+    int strainMag;
+    int strainDYaw;
 };
 
 // A collection of parameters that define a viable speed solution.
