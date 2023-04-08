@@ -4,7 +4,7 @@ class RangeParameters:
     def __init__(self, minX : float, maxX : float,
                  minZorZXSum : float, maxZorZXSum : float,
                  minY : float, maxY : float,
-                 nXs : int, nZs : int, nYs : int, useZXSum=True):
+                 nXs : int, nZs : int, nYs : int, useZXSum=True, useZPositive=True):
         
         self.minNX = minX
         self.maxNX = maxX
@@ -30,6 +30,7 @@ class RangeParameters:
         self.nSamplesNY = nYs
 
         self.useZXSum = useZXSum
+        self.usePositiveZ = useZPositive
 
     def getXStepSize(self):
         return (self.maxNX - self.minNX) / (self.nSamplesNX - 1)
@@ -58,11 +59,26 @@ class RangeParameters:
         return [self.minNX - self.getXStepSize()/2, self.maxNX + self.getXStepSize()/2, 
                 maxSecond + self.getZStepSize()/2, minSecond - self.getZStepSize()/2]
     
+    def evaluateSample(self, idx_y, idx_x, idx_z, eval_z_from_sum=True):
+        nY = self.minNY + (self.maxNX - self.minNY) * (idx_y / self.nSamplesNY)
+        nX = self.minNX + (self.maxNX - self.minNX) * (idx_x / self.nSamplesNX)
+        if not self.useZXSum:
+            nZ = self.minNZ + (self.maxNZ - self.minNZ) * (idx_z / self.nSamplesNZ)
+        elif eval_z_from_sum:
+            nZ = self.minNZXSum + (self.maxNZXSum - self.minNZXSum) * (idx_z / self.nSamplesNZ)
+        else:
+            nZXSum = self.minNZXSum + (self.maxNZXSum - self.minNZXSum) * (idx_z / self.nSamplesNZ)
+            nZ = nZXSum - abs(nX) * (1 if self.usePositiveZ else -1)
+
+        return nY, nX, nZ
+
     def computeZBounds(self):
         if not self.useZXSum:
             return self.minNZ, self.maxNZ
         else:
-            return self.minNZXSum - abs(self.minNX), self.maxNZXSum - abs(self.maxNX)
+            minMagX = min(abs(self.minNX), abs(self.maxNX))
+            maxMagX = max(abs(self.minNX), abs(self.maxNX))
+            return self.minNZXSum - maxMagX, self.maxNZXSum - minMagX
 
 
 def getCorrespondingRangeParametersFilename(normStagesPath : str):
@@ -317,7 +333,7 @@ def getNormalStagesExpandedFinerRun():
     return normalsArr
 
 
-def getDataAsParallelogram(normsArray : np.ndarray, const=-1):
+def getDataAsParallelogram(normsArray : np.ndarray, rangeParams : RangeParameters):
     if normsArray.ndim != 3:
         raise ValueError('Invalid number of array dimensions; should have three dimensions.')
     
@@ -327,13 +343,19 @@ def getDataAsParallelogram(normsArray : np.ndarray, const=-1):
 
     for h in range(nYs):
         for i in range(nXs):
+            eval_y, eval_x, eval_z = rangeParams.evaluateSample(h,i,0,False)
+            if eval_x < 0:
                 newNormsArray[h,i,i:i + nZs] = normsArray[h,i,:]
+            else:
+                newNormsArray[h,i,nXs - 1 - i:nZs + nXs - 1 - i] = normsArray[h,i,:]
 
+    print(newNormsArray.shape)
     return newNormsArray
 
 def getStitchedRunData(fileNames, folderName, nSamplesY : int, nSamplesX : int, nSamplesZ : int, stitchAxis=0):
     normalsArr = np.zeros((nSamplesY, nSamplesX, nSamplesZ))
-    
+    plotHeightsArr = np.full((nSamplesY, nSamplesX, nSamplesZ), 200, dtype=float)
+
     totalCount = 0
     for fileName in fileNames:
         with open(folderName + fileName, mode='rb') as file: # b is important -> binary
@@ -343,19 +365,45 @@ def getStitchedRunData(fileNames, folderName, nSamplesY : int, nSamplesX : int, 
 
         if stitchAxis == 0:
             currentCount = int(int_values_array.size / nSamplesX / nSamplesZ)
-            normalsArr[totalCount:totalCount+currentCount,:,:] = np.reshape(int_values_array, (currentCount, nSamplesX, nSamplesZ))
+            plotArr = normalsArr[totalCount:totalCount+currentCount,:,:] = np.reshape(int_values_array, (currentCount, nSamplesX, nSamplesZ))
         elif stitchAxis == 1:
             currentCount = int_values_array.size / nSamplesY / nSamplesZ
-            normalsArr[:,totalCount:totalCount+currentCount,:] = np.reshape(int_values_array, (nSamplesY, currentCount, nSamplesZ))
+            plotArr = normalsArr[:,totalCount:totalCount+currentCount,:] = np.reshape(int_values_array, (nSamplesY, currentCount, nSamplesZ))
         elif stitchAxis == 2:
             currentCount = int_values_array.size / nSamplesY / nSamplesX
-            normalsArr[:,:,totalCount:totalCount+currentCount] = np.reshape(int_values_array, (nSamplesY, nSamplesX, currentCount))
+            plotArr = normalsArr[:,:,totalCount:totalCount+currentCount] = np.reshape(int_values_array, (nSamplesY, nSamplesX, currentCount))
         else:
             raise ValueError("Stitch Axis must be between 0 and 2.")
- 
+
+        try:
+            file, folder = getCorrespondingHeightDiffFilenameAndFolderPath(folderName + fileName)
+            if stitchAxis == 0:
+                heightDiffArr = getFloatDataFromBinaryFile(file, folder, currentCount, nSamplesX, nSamplesZ)
+            elif stitchAxis == 1:
+                heightDiffArr = getFloatDataFromBinaryFile(file, folder, nSamplesY, currentCount, nSamplesZ)
+            else:
+                heightDiffArr = getFloatDataFromBinaryFile(file, folder, nSamplesY, nSamplesX, currentCount)
+            
+            plotArrH = plotArr.astype(float)
+            for i in range(plotArr.shape[0]):
+                for j in range(plotArr.shape[1]):
+                    for k in range(plotArr.shape[2]):
+                        if(plotArr[i,j,k] == 8):
+                            plotArrH[i,j,k] = 9 - min(0.01 * heightDiffArr[i,j,k], 1.0)
+            
+            if stitchAxis == 0:
+                plotHeightsArr[totalCount:totalCount+currentCount,:,:] = plotArrH
+            elif stitchAxis == 1:
+                plotHeightsArr[:,totalCount:totalCount+currentCount,:] = plotArrH
+            elif stitchAxis == 2:
+                plotHeightsArr[:,:,totalCount:totalCount+currentCount] = plotArrH
+
+        except:
+            print("Couldn't Locate Height Difference File at \'" + folder + file + "\' or encountered other error; Skipping")
+
         totalCount += currentCount
 
-    return normalsArr
+    return normalsArr, plotHeightsArr
 
 
 RP_COARSE_RUN = RangeParameters(-0.25, -0.17, 0.56, 0.64, 0.75, 0.9, 81, 81, 151, True)

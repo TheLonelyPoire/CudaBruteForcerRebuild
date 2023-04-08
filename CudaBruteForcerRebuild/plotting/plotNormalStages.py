@@ -36,28 +36,14 @@ def update_image_plot(implot, img, pauseRate : float, colmap : clrs.LinearSegmen
     return implot
 
 
-folderName = "../output/"
-fileName = "normalStagesReached_3_31_0_31.bin"
+folderName = "../output/UnsortedRuns/"
+fileName = "normalStagesReached_4_3_22_50.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
 
 rangeParameters = getRangeParametersFromFile(getCorrespondingRangeParametersFilename(folderName + fileName))
 useParallelogram = False
-
-# Custom Range Parameters
-minNX = -0.213
-maxNX = -0.209
-minNZorZXSum = 0.598
-maxNZorZXSum = 0.602
-minNY = 0.8
-maxNY = 0.9
-nSamplesNX = 201
-nSamplesNZ = 201
-nSamplesNY = 41
-useZXSum = True
-
-# rangeParameters = RangeParameters(minNX, maxNX, minNZorZXSum, maxNZorZXSum, minNY, maxNY, nSamplesNX, nSamplesNZ, nSamplesNY, useZXSum=useZXSum)
 
 foundHeightDifference = False
 
@@ -80,17 +66,42 @@ if fileName.startswith("norm"):
 else:
     plotArr = getFloatDataFromBinaryFile(fileName, folderName=folderName, nSamplesY=rangeParameters.nSamplesNY, nSamplesX=rangeParameters.nSamplesNX, nSamplesZ=rangeParameters.nSamplesNZ)
 
+
+# Custom Range Parameters
+# minNX = 0.19
+# maxNX = 0.25
+# minNZorZXSum = 0.57
+# maxNZorZXSum = 0.64
+# minNY = 0.81
+# maxNY = 0.9
+# nSamplesNX = 241
+# nSamplesNZ = 281
+# nSamplesNY = 181
+# useZXSum = True
+# rangeParameters = RangeParameters(minNX, maxNX, minNZorZXSum, maxNZorZXSum, minNY, maxNY, nSamplesNX, nSamplesNZ, nSamplesNY, useZXSum=useZXSum)
+
+# plotArr, plotArrH = getStitchedRunData([ 
+#                               "normalStagesReached_3_31_12_23.bin", 
+#                               "normalStagesReached_3_31_17_25.bin", 
+#                               "normalStagesReached_3_31_16_8.bin", 
+#                               "normalStagesReached_3_29_22_41.bin"], folderName, nSamplesNY, nSamplesNX, nSamplesNZ)
+# foundHeightDifference = True
+
+# "normalStagesReached_3_29_16_44.bin",
+# "normalStagesReached_3_30_12_25.bin",
+
 # Load pre-existing run
 # rangeParameters = RP_FINER_EXPANDED_RUN
 # plotArr = NS_FINER_EXPANDED_RUN
 # foundHeightDifference = False
 
+
 if(useParallelogram):
-    plotArr = getDataAsParallelogram(plotArr)
-    plotArrH = getDataAsParallelogram(plotArrH)
+    plotArr = getDataAsParallelogram(plotArr, rangeParameters)
+    plotArrH = getDataAsParallelogram(plotArrH, rangeParameters)
 
 numStages = 10
-pauseRate = 0.05 
+pauseRate = 0.01 
 
 if fileName.startswith("norm"):
     colormap = CM_MARBLER if not useParallelogram else CM_MARBLER_PARA
@@ -102,6 +113,9 @@ elif fileName.startswith("minUp"):
     colormap = CM_UPWARP_SPEED
 else:
     colormap = CM_DEFAULT
+
+# colormap = CM_MARBLER if not useParallelogram else CM_MARBLER_PARA
+# colormapH = CM_HEIGHT_GRADIENT if not useParallelogram else CM_HEIGHT_GRADIENT_PARA
 
 implot = setupPlot(plotArr, 0, rangeParameters, numStages, pauseRate, useParallelogram, colormap)
 for ny in range(rangeParameters.nSamplesNY):
