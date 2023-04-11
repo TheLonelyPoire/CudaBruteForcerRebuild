@@ -33,14 +33,14 @@ float maxNY = 0.0f;
 float minNZXSum = 0.0f;
 float maxNZXSum = 0.0f;
 
-int nSamplesNX = 41;
-int nSamplesNZ = 81;
+int nSamplesNX = 1;
+int nSamplesNZ = 1;
 int nSamplesNY = 1;
 
 float deltaX = 0.5f;
 float deltaZ = 0.5f;
 
-std::string normalsInput = "";
+std::string normalsInput = "input/crimsonNormals.txt";
 
 Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f };
 

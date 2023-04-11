@@ -36,14 +36,14 @@ def update_image_plot(implot, img, pauseRate : float, colmap : clrs.LinearSegmen
     return implot
 
 
-folderName = "../output/UnsortedRuns/"
-fileName = "normalStagesReached_4_3_22_50.bin"
+folderName = "../output/ImportantSolutions/"
+fileName = "normalStagesReached_3_31_17_25.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
 
 rangeParameters = getRangeParametersFromFile(getCorrespondingRangeParametersFilename(folderName + fileName))
-useParallelogram = False
+useParallelogram = True
 
 foundHeightDifference = False
 
