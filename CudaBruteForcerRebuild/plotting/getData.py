@@ -420,6 +420,14 @@ RP_FINER_EXPANDED_RUN = RangeParameters(-0.25, -0.19, 0.57, 0.64, 0.79, 0.9, 241
 
 NS_FINER_EXPANDED_RUN = getNormalStagesExpandedFinerRun()
 
+# RP_FINER_EXPANDED_RUN_Q2 = RangeParameters(0.19, 0.25, 0.57, 0.64, 0.79, 0.9, 241, 281, 221, True)
+
+# NS_FINER_EXPANDED_RUN_Q2, _ = getStitchedRunData(["normalStagesReached_3_29_16_44.bin",
+#                               "normalStagesReached_3_30_12_25.bin", 
+#                               "normalStagesReached_3_31_12_23.bin", 
+#                               "normalStagesReached_3_31_17_25.bin", 
+#                               "normalStagesReached_3_31_16_8.bin", 
+#                               "normalStagesReached_3_29_22_41.bin"], "../output/ImportantSolutions/", 221, 241, 281)
 
 
 

@@ -7,25 +7,43 @@ from matplotlib import pyplot as plt
 
 
 def setupPlot(plotArray, sampleIdx, rParams : RangeParameters, nStages, pauseRate, usePara, colmap):
+    plotExtents = rParams.getExtents(usePara)
     implot = plt.imshow(plotArray[sampleIdx,:,:].transpose(), 
                    cmap=colmap, interpolation='nearest', origin='upper',
-                   extent=rParams.getExtents(usePara),
-                   vmin=-1 if usePara else 0, vmax=nStages-1)
-    plt.colorbar()    
+                   extent=plotExtents, vmin=-1 if usePara else 0, vmax=nStages-1)
+    plt.colorbar()  
+
+    aspect_ratio = (plotExtents[2] - plotExtents[3]) / (plotExtents[1] - plotExtents[0])
+
+    # Antisymmetric tick counts are used due to horizontal tick orientation
+    if aspect_ratio > 4:
+        setupTickCounts = (3,20)
+    elif aspect_ratio > 1.6:
+        setupTickCounts = (5,15)
+    elif aspect_ratio > 0.625:
+        setupTickCounts = (10,10)
+    elif aspect_ratio > 0.25:
+        setupTickCounts = (12,5)
+    else:
+        setupTickCounts = (15,3)
+
     plt.xlabel("nX")
-    plt.xticks(np.arange(rParams.minNX, rParams.maxNX + rParams.getXStepSize(), rParams.getXStepSize()*20))
+    stepSizeX = (rParams.maxNX - rParams.minNX) / (setupTickCounts[0] - 1)
+    plt.xticks(np.arange(rParams.minNX, rParams.maxNX + stepSizeX/2, stepSizeX))
 
     if rParams.useZXSum and not usePara:
         plt.ylabel("|nZ| + |nX|")     
-        plt.yticks(np.arange(rParams.maxNZXSum, rParams.minNZXSum - rParams.getZStepSize(), -rParams.getZStepSize()*10))
+        stepSizeZXSum = (rangeParameters.maxNZXSum - rangeParameters.minNZXSum) / (setupTickCounts[1] - 1)
+        plt.yticks(np.arange(rParams.maxNZXSum, rParams.minNZXSum - stepSizeZXSum / 2, -stepSizeZXSum))
     else:
         plt.ylabel("nZ")
-        minZBound, maxZBound = rParams.computeZBounds()     
-        plt.yticks(np.arange(maxZBound, minZBound - rParams.getZStepSize(), -rParams.getZStepSize()*10))
+        minZBound, maxZBound = rParams.computeZBounds()  
+        stepSizeZ = (maxZBound - minZBound) / (setupTickCounts[1] - 1)   
+        plt.yticks(np.arange(maxZBound, minZBound - stepSizeZ/2, -stepSizeZ))
     
     plt.title('nY = ' + str(round(sampleIdx * rParams.getYStepSize() + rParams.minNY,5)))
 
-    return implot
+    return implot, setupTickCounts
 
 
 def update_image_plot(implot, img, pauseRate : float, colmap : clrs.LinearSegmentedColormap, title=''):
@@ -117,7 +135,7 @@ else:
 # colormap = CM_MARBLER if not useParallelogram else CM_MARBLER_PARA
 # colormapH = CM_HEIGHT_GRADIENT if not useParallelogram else CM_HEIGHT_GRADIENT_PARA
 
-implot = setupPlot(plotArr, 0, rangeParameters, numStages, pauseRate, useParallelogram, colormap)
+implot, currentTickCounts = setupPlot(plotArr, 0, rangeParameters, numStages, pauseRate, useParallelogram, colormap)
 for ny in range(rangeParameters.nSamplesNY):
     update_image_plot(implot, plotArr[ny,:,:].transpose(), pauseRate, colormap, 'nY = ' + str(round(ny * rangeParameters.getYStepSize() + rangeParameters.minNY,5)))
 
@@ -150,12 +168,13 @@ while(True):
 
     if sample == 'help':
         print("\nThis program plots per-normal data collected from the BitFS bruteforcer.\n\nValid commands:\n====================")
-        print('0,1,...  - Displays a single nY slice of the data based on the index entered. The input cannot exceed the number of nY samples - 1.')
-        print('video    - Displays all nY samples in a continuous video, with the frame delay based on the speed of the plotter and the pause rate.')
-        print('chpr <f> - Changes the pause rate to the input (pause rate is stored as a floating-point variable).')
-        print('thd      - Toggles whether or not the height difference is displayed (if loaded).')
-        print('quit     - Quits the application (typing -1 will do the same).')
-        print('help     - Prints this menu.')
+        print('0,1,...    - Displays a single nY slice of the data based on the index entered. The input cannot exceed the number of nY samples - 1.')
+        print('video      - Displays all nY samples in a continuous video, with the frame delay based on the speed of the plotter and the pause rate.')
+        print('chpr <f>   - Changes the pause rate to the input (pause rate is stored as a floating-point variable).')
+        print('ct <i> <i> - Changes the tick counts for the plot axes; format is <horizontal> <vertical>. Both values must be strictly positive integers.')
+        print('thd        - Toggles whether or not the height difference is displayed (if loaded).')
+        print('quit       - Quits the application (typing -1 will do the same).')
+        print('help       - Prints this menu.')
 
         continue
 
@@ -192,8 +211,39 @@ while(True):
             print("Height difference file couldn't be loaded; please ensure height difference file is present and named correctly.")
 
         continue
+
+    if sample.startswith('ct '):
+        nums = sample[3:].strip().split()
+        if len(nums) != 2:
+            print("Format error: Please enter exactly two positive integers separated by whitespace.")
+        elif not nums[0].isdigit():
+            print("Format error: First entry could not be parsed as an integer.")
+        elif not nums[1].isdigit():
+            print("Format error: Second entry could not be parsed as an integer.")
+        elif int(nums[0]) <= 0:
+            print("Value error: First entry was not positive; please enter positive tick counts.")
+        elif int(nums[1]) <= 0:
+            print("Value error: Second entry was not positive; please enter positive tick counts.")
+        else:
+            if not plt.get_fignums():
+                implot = setupPlot(plotArrH if useHeightDiff else plotArr, 0, rangeParameters, numStages, pauseRate, useParallelogram, colormapH if useHeightDiff else colormap)
+
+            currentTickCounts = (int(nums[0]), int(nums[1]))
+            stepSizeX = (rangeParameters.maxNX - rangeParameters.minNX) / (currentTickCounts[0] - 1)
+            plt.xticks(np.arange(rangeParameters.minNX, rangeParameters.maxNX + stepSizeX / 2, stepSizeX))
+
+            if rangeParameters.useZXSum and not useParallelogram:
+                stepSizeZXSum = (rangeParameters.maxNZXSum - rangeParameters.minNZXSum) / (currentTickCounts[1] - 1)
+                plt.yticks(np.arange(rangeParameters.maxNZXSum, rangeParameters.minNZXSum - stepSizeZXSum/2, -stepSizeZXSum))
+            else:
+                minZBound, maxZBound = rangeParameters.computeZBounds()
+                stepSizeZ = (maxZBound - minZBound) / (currentTickCounts[1] - 1)
+                plt.yticks(np.arange(maxZBound, minZBound - stepSizeZ/2, -stepSizeZ))
+            plt.pause(0.01)
+
+        continue
     
-    print("Command not recognized! Please type 'help' for a list of valid commands.\n")
+    print("Command not recognized! Please type 'help' for a list of valid commands.")
 
 
 

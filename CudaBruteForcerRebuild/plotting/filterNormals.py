@@ -1,8 +1,8 @@
 import numpy as np
 from getData import *
 
-range_parameters = RP_FINER_EXPANDED_RUN
-normalsArr = NS_FINER_EXPANDED_RUN
+# range_parameters = RP_FINER_EXPANDED_RUN_Q2
+# normalsArr = NS_FINER_EXPANDED_RUN_Q2
 
 filteredIndices8 = np.asarray(normalsArr == 8).nonzero()
 filteredIndices7 = np.asarray(normalsArr == 7).nonzero()
@@ -33,25 +33,26 @@ def saveFilteredNormalsIndices(arr, fileName):
                     str(arr[2][i]) + '\n')
 
 # Normals saved as X,Y,Z (or X,Y,ZX_Sum)
-saveFilteredNormals(filteredIndices8, "yellowNormals.txt")
+saveFilteredNormals(filteredIndices8, "yellowNormalsQ2.txt")
 
 # Indices saved as Y,X,Z (or Y,X,ZX_Sum)
-saveFilteredNormalsIndices(filteredIndices8, "yellowIndices.txt")
+saveFilteredNormalsIndices(filteredIndices8, "yellowIndicesQ2.txt")
      
 # Normals saved as X,Y,Z (or Y,X,ZX_Sum)
-saveFilteredNormals(filteredIndices7, "greenNormals.txt")
+saveFilteredNormals(filteredIndices7, "greenNormalsQ2.txt")
 
 # Indices saved as Y,X,Z (or Y,X,ZX_Sum)
-saveFilteredNormalsIndices(filteredIndices7, "greenIndices.txt")
+saveFilteredNormalsIndices(filteredIndices7, "greenIndicesQ2.txt")
 
 # Normals saved as X,Y,Z (or Y,X,ZX_Sum)
-saveFilteredNormals(filteredIndices6, "crimsonNormals.txt")
+saveFilteredNormals(filteredIndices6, "crimsonNormalsQ2.txt")
 
 # Indices saved as Y,X,Z (or Y,X,ZX_Sum)
-saveFilteredNormalsIndices(filteredIndices6, "crimsonIndices.txt")
+saveFilteredNormalsIndices(filteredIndices6, "crimsonIndicesQ2.txt")
 
 # Normals saved as X,Y,Z (or Y,X,ZX_Sum)
-saveFilteredNormals(filteredIndices5, "skyBlueNormals.txt")
+saveFilteredNormals(filteredIndices5, "skyBlueNormalsQ2.txt")
 
 # Indices saved as Y,X,Z (or Y,X,ZX_Sum)
-saveFilteredNormalsIndices(filteredIndices5, "skyBlueIndices.txt")
+saveFilteredNormalsIndices(filteredIndices5, "skyBlueIndicesQ2.txt")
+

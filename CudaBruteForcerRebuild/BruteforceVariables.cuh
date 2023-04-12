@@ -66,6 +66,8 @@ extern __device__ int correctStickSolIdx1;
 extern __device__ int nPass1Sols;
 extern __device__ int nPass2Sols;
 extern __device__ int nPass3Sols;
+extern __device__ int nPass4Sols;
+extern __device__ int nPass5Sols;
 
 extern __device__ float currentLowestHeightDiff;
 

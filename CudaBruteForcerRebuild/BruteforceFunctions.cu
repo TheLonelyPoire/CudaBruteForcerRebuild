@@ -171,6 +171,8 @@ void run_common_bruteforcer(int g, int h, int i, int j, float normX, float normY
                     printf("  Stage 6 Pass Count: Failed\n");
                     printf("  Stage 7 Pass Count: Failed\n");
                     printf("  Stage 8 Pass Count: Failed\n");
+                    printf("  Check 8A Pass Count: Failed\n");
+                    printf("  Check 8B Pass Count: Failed\n");
                     printf("  Stage 9 Solutions: Failed\n");
                 }
             }
@@ -1579,7 +1581,7 @@ __global__ void test_speed_solution() {
         float oneUpPlatformYMax = stickSol->xDir == 0 ? oneUpPlatformYMaxRight : oneUpPlatformYMaxLeft;
         
         int strainMag = idx % 64; // Straining
-        int strainDYaw = (2 * (idx - strainMag)) % 4096; // Straining
+        int strainDYaw = ((2 * (idx - strainMag)) % 4096); // Straining
         strainMag = strainMag == 0 ? 0 : strainMag + 1; // Straining
 
         float startSpeedX = speedSol->startSpeed * gSineTableG[(oupSol->angle) / 16]; // Straining
@@ -1590,10 +1592,10 @@ __global__ void test_speed_solution() {
         float strainSideways = (strainRho / 32.0f) * gSineTableG[strainDYaw] * 10.0f; // Straining
         int sideAngle = (oupSol->angle + 16384) % 65536; // Straining
 
-        float frame2Speed = ((speedSol->startSpeed - 0.35f) + strainForwards) - 1.0f;
+        float frame2Speed = ((speedSol->startSpeed - 0.35f) + strainForwards) - 1.0f; // Straining
         float frame2SpeedX = (frame2Speed * gSineTableG[(oupSol->angle) / 16]) + (strainSideways * gSineTableG[sideAngle / 16]); // Straining
         float frame2SpeedZ = (frame2Speed * gCosineTableG[(oupSol->angle) / 16]) + (strainSideways * gCosineTableG[sideAngle / 16]); // Straining
-
+        float newFrame2Speed = sqrt(frame2SpeedX * frame2SpeedX + frame2SpeedZ * frame2SpeedZ); // Straining
 
         float relY = stickSol->stickY + 6.0f;
         float intendedMag = (relY * relY / 128.0f);
@@ -1613,8 +1615,8 @@ __global__ void test_speed_solution() {
 
         float newSpeed = sqrtf(returnSpeedX * returnSpeedX + returnSpeedZ * returnSpeedZ);
 
-        returnSpeedX = returnSpeedX * frame2Speed / newSpeed; // Straining
-        returnSpeedZ = returnSpeedZ * frame2Speed / newSpeed; // Straining
+        returnSpeedX = returnSpeedX * newFrame2Speed / newSpeed; // Straining
+        returnSpeedZ = returnSpeedZ * newFrame2Speed / newSpeed; // Straining
 
         returnSpeedX += 7.0f * oneUpPlatformNormalX;
 
@@ -1624,8 +1626,8 @@ __global__ void test_speed_solution() {
         float returnSpeed = -sqrtf(returnSpeedX * returnSpeedX + returnSpeedZ * returnSpeedZ);
 
         float oneUpPlatformPosition[3];
-        oneUpPlatformPosition[0] = platSol->returnPosition[0] - (oneUpPlatformNormalY + stickSol->q3 - 1.0) * returnSpeedX / 4.0;
-        oneUpPlatformPosition[2] = platSol->returnPosition[2] - (oneUpPlatformNormalY + stickSol->q3 - 1.0) * returnSpeedZ / 4.0;
+        oneUpPlatformPosition[0] = platSol->returnPosition[0] - (oneUpPlatformNormalY + stickSol->q3 - 1.0f) * returnSpeedX / 4.0f;
+        oneUpPlatformPosition[2] = platSol->returnPosition[2] - (oneUpPlatformNormalY + stickSol->q3 - 1.0f) * returnSpeedZ / 4.0f;
 
         float intendedPosition[3];
         intendedPosition[0] = oneUpPlatformPosition[0];
@@ -1634,8 +1636,8 @@ __global__ void test_speed_solution() {
         float currentNormalY = oneUpPlatformNormalY;
 
         for (int j = 1; j <= stickSol->q3; j++) {
-            intendedPosition[0] = intendedPosition[0] + currentNormalY * returnSpeedX / 4.0;
-            intendedPosition[2] = intendedPosition[2] + currentNormalY * returnSpeedZ / 4.0;
+            intendedPosition[0] = intendedPosition[0] + currentNormalY * returnSpeedX / 4.0f;
+            intendedPosition[2] = intendedPosition[2] + currentNormalY * returnSpeedZ / 4.0f;
             currentNormalY = 1.0f;
         }
 
@@ -1655,8 +1657,8 @@ __global__ void test_speed_solution() {
             int i;
 
             for (i = 1; i <= 4; i++) {
-                intendedPosition[0] = intendedPosition[0] + currentNormalY * returnSpeedX / 4.0;
-                intendedPosition[2] = intendedPosition[2] + currentNormalY * returnSpeedZ / 4.0;
+                intendedPosition[0] = intendedPosition[0] + currentNormalY * returnSpeedX / 4.0f;
+                intendedPosition[2] = intendedPosition[2] + currentNormalY * returnSpeedZ / 4.0f;
 
                 SurfaceG* floor;
                 float floorHeight;
@@ -1682,23 +1684,23 @@ __global__ void test_speed_solution() {
                 }
             }
 
-            if (fallTest && intendedPosition[1] < platSol->returnPosition[1]) {
+            if (fallTest && intendedPosition[1] <= platSol->returnPosition[1]) {
                 // TODO - REMOVE
                 atomicAdd(&nPass2Sols, 1);
                 for (int q1 = max(1, stickSol->q1q2 - 4); q1 <= min(4, stickSol->q1q2 - 1); q1++) {
                     int q2 = stickSol->q1q2 - q1;
 
                     float frame1Position[3];
-                    frame1Position[0] = oneUpPlatformPosition[0] - q2 * frame2SpeedX / 4.0; // Straining
-                    frame1Position[2] = oneUpPlatformPosition[2] - q2 * frame2SpeedZ / 4.0; // Straining
+                    frame1Position[0] = oneUpPlatformPosition[0] - q2 * frame2SpeedX / 4.0f; // Straining
+                    frame1Position[2] = oneUpPlatformPosition[2] - q2 * frame2SpeedZ / 4.0f; // Straining
 
                     float intendedPosition[3];
                     intendedPosition[0] = frame1Position[0];
                     intendedPosition[2] = frame1Position[2];
 
                     for (int j = 1; j <= q2; j++) {
-                        intendedPosition[0] = intendedPosition[0] + frame2SpeedX / 4.0; // Straining
-                        intendedPosition[2] = intendedPosition[2] + frame2SpeedZ / 4.0; // Straining
+                        intendedPosition[0] = intendedPosition[0] + frame2SpeedX / 4.0f; // Straining
+                        intendedPosition[2] = intendedPosition[2] + frame2SpeedZ / 4.0f; // Straining
                     }
 
                     frame1Position[0] = frame1Position[0] - (intendedPosition[0] - oneUpPlatformPosition[0]);
@@ -1706,8 +1708,8 @@ __global__ void test_speed_solution() {
 
                     if ((short)(int)frame1Position[0] >= -8191 && (short)(int)frame1Position[0] <= 8192 && (short)(int)frame1Position[2] >= -8191 && (short)(int)frame1Position[2] <= 8192) {
                         float startPosition[3];
-                        startPosition[0] = frame1Position[0] - (startNormals[stickSol->floorIdx][1] + q1 - 1.0) * startSpeedX / 4.0;
-                        startPosition[2] = frame1Position[2] - (startNormals[stickSol->floorIdx][1] + q1 - 1.0) * startSpeedZ / 4.0;
+                        startPosition[0] = frame1Position[0] - (startNormals[stickSol->floorIdx][1] + q1 - 1.0) * startSpeedX / 4.0f;
+                        startPosition[2] = frame1Position[2] - (startNormals[stickSol->floorIdx][1] + q1 - 1.0) * startSpeedZ / 4.0f;
 
                         float intendedPosition[3];
                         intendedPosition[0] = startPosition[0];
@@ -1716,8 +1718,8 @@ __global__ void test_speed_solution() {
                         float currentNormalY = startNormals[stickSol->floorIdx][1];
 
                         for (int j = 1; j <= q1; j++) {
-                            intendedPosition[0] = intendedPosition[0] + currentNormalY * startSpeedX / 4.0;
-                            intendedPosition[2] = intendedPosition[2] + currentNormalY * startSpeedZ / 4.0;
+                            intendedPosition[0] = intendedPosition[0] + currentNormalY * startSpeedX / 4.0f;
+                            intendedPosition[2] = intendedPosition[2] + currentNormalY * startSpeedZ / 4.0f;
                             currentNormalY = 1.0f;
                         }
 
@@ -1736,8 +1738,8 @@ __global__ void test_speed_solution() {
                         currentNormalY = startNormals[stickSol->floorIdx][1];
 
                         for (i = 1; i <= 4; i++) {
-                            intendedPosition[0] = intendedPosition[0] + currentNormalY * startSpeedX / 4.0;
-                            intendedPosition[2] = intendedPosition[2] + currentNormalY * startSpeedZ / 4.0;
+                            intendedPosition[0] = intendedPosition[0] + currentNormalY * startSpeedX / 4.0f;
+                            intendedPosition[2] = intendedPosition[2] + currentNormalY * startSpeedZ / 4.0f;
 
                             SurfaceG* floor;
                             float floorHeight;
@@ -1776,8 +1778,61 @@ __global__ void test_speed_solution() {
 
                         atomicMinFloat(&currentLowestHeightDiff, intendedPosition[1] - oneUpPlatformPosition[1]);
 
-                        if (fallTest && intendedPosition[1] < oneUpPlatformPosition[1]) {
+                        if (fallTest && intendedPosition[1] <= oneUpPlatformPosition[1]) {
+                            
                             frame1Position[1] = intendedPosition[1];
+
+                            // BEGIN: Post-Solution Step Check
+
+                            intendedPosition[0] = platSol->returnPosition[0];
+                            intendedPosition[1] = platSol->returnPosition[1];
+                            intendedPosition[2] = platSol->returnPosition[2];
+
+                            intendedPosition[0] += platSol->returnNormal[1] * returnSpeedX / 4.0f;
+                            intendedPosition[2] += platSol->returnNormal[1] * returnSpeedZ / 4.0f;
+                                
+                            if(check_inbounds(intendedPosition))
+                                continue;
+                            // END: Post-Solution Step Check
+
+                            atomicAdd(&nPass4Sols, 1);
+
+                            // BEGIN: Forwards Check
+
+                            intendedPosition[0] = startPosition[0];
+                            intendedPosition[1] = startPosition[1];
+                            intendedPosition[2] = startPosition[2];
+
+                            for (int i = 1; i <= q1; ++i)
+                            {
+                                intendedPosition[0] += startNormals[stickSol->floorIdx][1] * startSpeedX / 4.0f;
+                                intendedPosition[2] += startNormals[stickSol->floorIdx][1] * startSpeedZ / 4.0f;
+                            }
+
+                            if (intendedPosition[0] != frame1Position[0] || intendedPosition[2] != frame1Position[2])
+                                continue;
+
+                            for (int i = 1; i <= q2; ++i)
+                            {
+                                intendedPosition[0] += frame2SpeedX / 4.0f;
+                                intendedPosition[2] += frame2SpeedZ / 4.0f;
+                            }
+
+                            if (intendedPosition[0] != oneUpPlatformPosition[0] || intendedPosition[2] != oneUpPlatformPosition[2])
+                                continue;
+
+                            for (int i = 1; i <= stickSol->q3; ++i)
+                            {
+                                intendedPosition[0] += oneUpPlatformNormalY * returnSpeedX / 4.0f;
+                                intendedPosition[2] += oneUpPlatformNormalY * returnSpeedZ / 4.0f;
+                            }
+
+                            if (intendedPosition[0] != platSol->returnPosition[0] || intendedPosition[2] != platSol->returnPosition[2])
+                                continue;
+
+                            // END: Forwards Check
+
+                            atomicAdd(&nPass5Sols, 1);
 
                             printf("---------------------------------------\nFound Solution:\n---------------------------------------\n    Start Position: %.10g, %.10g, %.10g\n    Frame 1 Position: %.10g, %.10g, %.10g\n    Frame 2 Position: %.10g, %.10g, %.10g\n    Return Position: %.10g, %.10g, %.10g\n    PU Route Speed: %.10g (x=%.10g, z=%.10g)\n    PU Return Speed: %.10g (x=%.10g, z=%.10g)\n    Frame 1 Q-steps: %d\n    Frame 2 Q-steps: %d\n    Frame 3 Q-steps: %d\n    Strain Mag: %d\n    StrainHAUAngle: %d\n", startPosition[0], startPosition[1], startPosition[2], frame1Position[0], frame1Position[1], frame1Position[2], oneUpPlatformPosition[0], oneUpPlatformPosition[1], oneUpPlatformPosition[2], platSol->returnPosition[0], platSol->returnPosition[1], platSol->returnPosition[2], speedSol->startSpeed, startSpeedX, startSpeedZ, returnSpeed, returnSpeedX, returnSpeedZ, q1, q2, stickSol->q3, strainMag, strainDYaw); // Straining
                             printf("    Frame 1 Angle: %d\n    10k Stick X: %d\n    10k Stick Y: %d\n    10k Camera Yaw: %d\n    Start Floor Normal: %.10g, %.10g, %.10g\n", oupSol->angle, 0, stickSol->stickY, oupSol->cameraYaw, startNormals[stickSol->floorIdx][0], startNormals[stickSol->floorIdx][1], startNormals[stickSol->floorIdx][2]);
@@ -1804,8 +1859,10 @@ __global__ void test_speed_solution() {
                                 solution.returnSpeed = returnSpeed;
                                 solution.returnSpeedX = returnSpeedX;
                                 solution.returnSpeedZ = returnSpeedZ;
-                                solution.strainMag = strainMag;
-                                solution.strainDYaw = strainDYaw;
+                                solution.strainMag = strainMag; // Straining
+                                solution.strainDYaw = strainDYaw * 16; // Straining
+                                solution.frame2SpeedX = frame2SpeedX; // Straining
+                                solution.frame2SpeedZ = frame2SpeedZ; // Straining
                                 tenKSolutionsHAU[tenKSolIdx] = solution;
                             }
                         }
@@ -1844,6 +1901,7 @@ __global__ void test_oup_solution() {
 
         float startSpeedX = stickSol->startSpeed * gSineTableG[(oupSol->angle) / 16];
         float startSpeedZ = stickSol->startSpeed * gCosineTableG[(oupSol->angle) / 16];
+        float newStartSpeed = sqrtf(startSpeedX * startSpeedX + startSpeedZ * startSpeedZ);
 
         float returnSpeedX = startSpeedX;
         float returnSpeedZ = startSpeedZ;
@@ -1853,8 +1911,8 @@ __global__ void test_oup_solution() {
 
         float newSpeed = sqrtf(returnSpeedX * returnSpeedX + returnSpeedZ * returnSpeedZ);
 
-        returnSpeedX = returnSpeedX * stickSol->startSpeed / newSpeed;
-        returnSpeedZ = returnSpeedZ * stickSol->startSpeed / newSpeed;
+        returnSpeedX = returnSpeedX * newStartSpeed / newSpeed;
+        returnSpeedZ = returnSpeedZ * newStartSpeed / newSpeed;
 
         returnSpeedX += 7.0f * oneUpPlatformNormalX;
 
@@ -2023,7 +2081,7 @@ __global__ void check_speed_angle() {
 
     if (idx < (long long int)min(nStickSolutions, MAX_STICK_SOLUTIONS) * 2048) {
         float cameraPositions[4][3] = { {-8192, -2918, -8192}, {-8192, -2918, 8191}, {8191, -2918, -8192}, {8191, -2918, 8191} };
-        float oupBuffer = 1000.0;
+        float oupBuffer = 1000.0f;
 
         int solIdx = idx / 2048;
 
@@ -2051,8 +2109,8 @@ __global__ void check_speed_angle() {
         float startSpeedX = stickSol->startSpeed * gSineTableG[hau];
         float startSpeedZ = stickSol->startSpeed * gCosineTableG[hau];
 
-        float oupX = platSol->returnPosition[0] - (oneUpPlatformNormalY + stickSol->q3 - 1.0f) * (returnSpeedX / 4.0);
-        float oupZ = platSol->returnPosition[2] - (oneUpPlatformNormalY + stickSol->q3 - 1.0f) * (returnSpeedZ / 4.0);
+        float oupX = platSol->returnPosition[0] - (oneUpPlatformNormalY + stickSol->q3 - 1.0f) * (returnSpeedX / 4.0f);
+        float oupZ = platSol->returnPosition[2] - (oneUpPlatformNormalY + stickSol->q3 - 1.0f) * (returnSpeedZ / 4.0f);
 
         if (oupX >= INT32_MIN && oupX <= INT32_MAX && oupZ >= INT32_MIN && oupZ <= INT32_MAX) {
             short relX = (short)(int)oupX;
@@ -2069,8 +2127,8 @@ __global__ void check_speed_angle() {
                 float currentNormalY = oneUpPlatformNormalY;
 
                 for (int j = 1; j <= stickSol->q3; j++) {
-                    intendedPosition[0] = intendedPosition[0] + currentNormalY * returnSpeedX / 4.0;
-                    intendedPosition[2] = intendedPosition[2] + currentNormalY * returnSpeedZ / 4.0;
+                    intendedPosition[0] = intendedPosition[0] + currentNormalY * returnSpeedX / 4.0f;
+                    intendedPosition[2] = intendedPosition[2] + currentNormalY * returnSpeedZ / 4.0f;
                     currentNormalY = 1.0f;
 
                     if ((short)(int)intendedPosition[0] < -8191 - oobTolerance || (short)(int)intendedPosition[0] > 8192 + oobTolerance || (short)(int)intendedPosition[2] < -8191 - oobTolerance || (short)(int)intendedPosition[2] > 8192 + oobTolerance) {
@@ -2080,13 +2138,13 @@ __global__ void check_speed_angle() {
                 }
 
                 if (inBoundsTest) {
-                    intendedPosition[0] = oupX - (startNormals[stickSol->floorIdx][1] + stickSol->q1q2 - 1.0f) * (startSpeedX / 4.0);
-                    intendedPosition[2] = oupZ - (startNormals[stickSol->floorIdx][1] + stickSol->q1q2 - 1.0f) * (startSpeedZ / 4.0);
+                    intendedPosition[0] = oupX - (startNormals[stickSol->floorIdx][1] + stickSol->q1q2 - 1.0f) * (startSpeedX / 4.0f);
+                    intendedPosition[2] = oupZ - (startNormals[stickSol->floorIdx][1] + stickSol->q1q2 - 1.0f) * (startSpeedZ / 4.0f);
                     float currentNormalY = startNormals[stickSol->floorIdx][1];
 
                     for (int j = 1; j <= stickSol->q1q2; j++) {
-                        intendedPosition[0] = intendedPosition[0] + currentNormalY * startSpeedX / 4.0;
-                        intendedPosition[2] = intendedPosition[2] + currentNormalY * startSpeedZ / 4.0;
+                        intendedPosition[0] = intendedPosition[0] + currentNormalY * startSpeedX / 4.0f;
+                        intendedPosition[2] = intendedPosition[2] + currentNormalY * startSpeedZ / 4.0f;
                         currentNormalY = 1.0f;
 
                         if ((short)(int)intendedPosition[0] < -8191 - oobTolerance || (short)(int)intendedPosition[0] > 8192 + oobTolerance || (short)(int)intendedPosition[2] < -8191 - oobTolerance || (short)(int)intendedPosition[2] > 8192 + oobTolerance) {
@@ -2099,8 +2157,8 @@ __global__ void check_speed_angle() {
                 if (inBoundsTest) {
                     float startSpeedX = stickSol->startSpeed * gSineTableG[hau];
                     float startSpeedZ = stickSol->startSpeed * gCosineTableG[hau];
-                    float frame1X = oupX - (startSpeedX) * ((stickSol->q1q2 - 1.0f) / 4.0); // Straining
-                    float frame1Z = oupZ - (startSpeedZ) * ((stickSol->q1q2 - 1.0f) / 4.0); // Straining
+                    float frame1X = oupX - (startSpeedX) * ((stickSol->q1q2 - 1.0f) / 4.0f); // Straining
+                    float frame1Z = oupZ - (startSpeedZ) * ((stickSol->q1q2 - 1.0f) / 4.0f); // Straining
 
                     int minCameraYaw = 0;
                     int maxCameraYaw = 0;
@@ -2131,8 +2189,8 @@ __global__ void check_speed_angle() {
                         if (oupSolIdx < MAX_OUP_SOLUTIONS) {
                             OUPSolution sol;
                             sol.stickSolutionIdx = solIdx;
-                            sol.pux = (int)floor((oupX + 32768.0) / 65536.0);
-                            sol.puz = (int)floor((oupZ + 32768.0) / 65536.0);
+                            sol.pux = (int)floor((oupX + 32768.0f) / 65536.0f);
+                            sol.puz = (int)floor((oupZ + 32768.0f) / 65536.0f);
                             sol.angle = 16 * hau;
                             sol.cameraYaw = cameraYaw;
                             oupSolutions[oupSolIdx] = sol;
@@ -2283,11 +2341,15 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         int nPass1SolsCPU = 0;
         int nPass2SolsCPU = 0;
         int nPass3SolsCPU = 0;
+        int nPass4SolsCPU = 0;
+        int nPass5SolsCPU = 0;
         float currentLowestHeightDiffCPU = MAX_HEIGHT_DIFFERENCE;
 
         cudaMemcpyToSymbol(nPass1Sols, &nPass1SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
         cudaMemcpyToSymbol(nPass2Sols, &nPass2SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
         cudaMemcpyToSymbol(nPass3Sols, &nPass3SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+        cudaMemcpyToSymbol(nPass4Sols, &nPass4SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+        cudaMemcpyToSymbol(nPass5Sols, &nPass5SolsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
         cudaMemcpyToSymbol(currentLowestHeightDiff, &currentLowestHeightDiffCPU, sizeof(float), 0, cudaMemcpyHostToDevice);
 
@@ -2300,6 +2362,8 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
         cudaMemcpyFromSymbol(&nPass1SolsCPU, nPass1Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
         cudaMemcpyFromSymbol(&nPass2SolsCPU, nPass2Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
         cudaMemcpyFromSymbol(&nPass3SolsCPU, nPass3Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
+        cudaMemcpyFromSymbol(&nPass4SolsCPU, nPass4Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
+        cudaMemcpyFromSymbol(&nPass5SolsCPU, nPass5Sols, sizeof(int), 0, cudaMemcpyDeviceToHost);
 
         cudaMemcpyFromSymbol(&currentLowestHeightDiffCPU, currentLowestHeightDiff, sizeof(float), 0, cudaMemcpyDeviceToHost);
 
@@ -2336,6 +2400,26 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             if (subSolutionPrintingMode == 2)
                 printf("  Stage 8 Pass Count: Failed\n");
         }
+        if (nPass4SolsCPU > 0)
+        {
+            if (subSolutionPrintingMode == 2)
+                printf("  Check 8A Pass Count: %d\n", nPass4SolsCPU);
+        }
+        else
+        {
+            if (subSolutionPrintingMode == 2)
+                printf("  Check 8A Pass Count: Failed\n");
+        }
+        if (nPass5SolsCPU > 0)
+        {
+            if (subSolutionPrintingMode == 2)
+                printf("  Check 8B Pass Count: %d\n", nPass5SolsCPU);
+        }
+        else
+        {
+            if (subSolutionPrintingMode == 2)
+                printf("  Check 8B Pass Count: Failed\n");
+        }
 
         finalHeightDiffs[current_normal_index] = currentLowestHeightDiffCPU; 
     }
@@ -2347,6 +2431,8 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             printf("  Stage 6 Pass Count: Failed\n");
             printf("  Stage 7 Pass Count: Failed\n");
             printf("  Stage 8 Pass Count: Failed\n");
+            printf("  Check 8A Pass Count: Failed\n");
+            printf("  Check 8B Pass Count: Failed\n");
         }
     }
 
@@ -2394,7 +2480,7 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
             wf << speedSol->startSpeed << ", " << tenKSol->startSpeedX << ", " << tenKSol->startSpeedZ << ", ";
             wf << tenKSol->returnSpeed << ", " << tenKSol->returnSpeedX << ", " << tenKSol->returnSpeedZ << ", ";
             wf << tenKSol->frame1QSteps << ", " << tenKSol->frame2QSteps << ", " << stickSol->q3 << ", ";
-            wf << tenKSol->strainMag << ", " << tenKSol->strainDYaw << ", "; // Straining
+            wf << tenKSol->strainMag << ", " << tenKSol->strainDYaw << ", " << tenKSol->frame2SpeedX << ", " << tenKSol->frame2SpeedZ << ", "; // Straining
             wf << oupSol->angle << ", ";
             wf << 0 << ", " << stickSol->stickY << ", ";
             wf << oupSol->cameraYaw << ", ";
@@ -2417,55 +2503,6 @@ void run_hau_bruteforcer(int g, int h, int i, int j, float normX, float normY, f
     {
         if (subSolutionPrintingMode == 2)
             printf("  Stage 9 Solutions: Failed\n");
-
-        if (printOneOffSolutions)
-        {
-            struct PlatformSolution* platSolutionsCPU = (struct PlatformSolution*)std::malloc(nPlatSolutionsCPU * sizeof(struct PlatformSolution));
-            struct UpwarpSolution* upwarpSolutionsCPU = (struct UpwarpSolution*)std::malloc(nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution));
-            struct StickSolution* stickSolutionsCPU = (struct StickSolution*)std::malloc(nStickSolutionsCPU * sizeof(struct StickSolution));
-            struct OUPSolution* oupSolutionsCPU = (struct OUPSolution*)std::malloc(nOUPSolutionsCPU * sizeof(struct OUPSolution));
-            struct SpeedSolution* speedSolutionsCPU = (struct SpeedSolution*)std::malloc(nSpeedSolutionsCPU * sizeof(struct SpeedSolution));
-
-            cudaMemcpyFromSymbol(speedSolutionsCPU, speedSolutions, nSpeedSolutionsCPU * sizeof(struct SpeedSolution), 0, cudaMemcpyDeviceToHost);
-            cudaMemcpyFromSymbol(oupSolutionsCPU, oupSolutions, nOUPSolutionsCPU * sizeof(struct OUPSolution), 0, cudaMemcpyDeviceToHost);
-            cudaMemcpyFromSymbol(stickSolutionsCPU, stickSolutions, nStickSolutionsCPU * sizeof(struct StickSolution), 0, cudaMemcpyDeviceToHost);
-            cudaMemcpyFromSymbol(upwarpSolutionsCPU, upwarpSolutions, nUpwarpSolutionsCPU * sizeof(struct UpwarpSolution), 0, cudaMemcpyDeviceToHost);
-            cudaMemcpyFromSymbol(platSolutionsCPU, platSolutions, nPlatSolutionsCPU * sizeof(struct PlatformSolution), 0, cudaMemcpyDeviceToHost);
-
-            for (int l = 0; l < nSpeedSolutionsCPU; l++) {
-                struct SpeedSolution* speedSol = &(speedSolutionsCPU[l]);
-                struct OUPSolution* oupSol = &(oupSolutionsCPU[speedSol->oupSolutionIdx]);
-                struct StickSolution* stickSol = &(stickSolutionsCPU[oupSol->stickSolutionIdx]);
-                struct UpwarpSolution* uwSol = &(upwarpSolutionsCPU[stickSol->upwarpSolutionIdx]);
-                struct PlatformSolution* platSol = &(platSolutionsCPU[uwSol->platformSolutionIdx]);
-
-                wf << normX << ", " << normY << ", " << normZ << ", ";
-                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-                wf << platSol->returnPosition[0] << ", " << platSol->returnPosition[1] << ", " << platSol->returnPosition[2] << ", ";
-                wf << speedSol->startSpeed << ", " << "N/A" << ", " << "N/A" << ", ";
-                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-                wf << "N/A" << ", " << "N/A" << ", " << "N/A" << ", ";
-                wf << oupSol->angle << ", ";
-                wf << 0 << ", " << stickSol->stickY << ", ";
-                wf << oupSol->cameraYaw << ", ";
-                wf << host_norms[3 * stickSol->floorIdx] << ", " << host_norms[3 * stickSol->floorIdx + 1] << ", " << host_norms[3 * stickSol->floorIdx + 2] << ", ";
-                wf << platSol->nFrames << ", ";
-                wf << platSol->endNormal[0] << ", " << platSol->endNormal[1] << ", " << platSol->endNormal[2] << ", ";
-                wf << platSol->endPosition[0] << ", " << platSol->endPosition[1] << ", " << platSol->endPosition[2] << ", ";
-                wf << uwSol->upwarpPosition[0] << ", " << uwSol->upwarpPosition[1] << ", " << uwSol->upwarpPosition[2] << ", ";
-                wf << uwSol->pux << ", " << uwSol->puz;
-
-                wf << std::endl;
-            }
-
-            free(platSolutionsCPU);
-            free(upwarpSolutionsCPU);
-            free(stickSolutionsCPU);
-            free(oupSolutionsCPU);
-            free(speedSolutionsCPU);
-        }
     }
 }
 
@@ -2524,7 +2561,7 @@ void setup_output_hau(std::ofstream& wf)
     wf << "Pre-10K Speed, Pre-10K X Velocity, Pre-10K Z Velocity, ";
     wf << "Return Speed, Return X Velocity, Return Z Velocity, ";
     wf << "Frame 1 Q-steps, Frame 2 Q-steps, Frame 3 Q-steps, ";
-    wf << "Strain Magnitude, Strain DYaw, ";
+    wf << "Strain Magnitude, Strain DYaw, Frame 2 Speed X, Frame 2 Speed Z, ";
     wf << "Frame 1 Angle, ";
     wf << "10K Stick X, 10K Stick Y, ";
     wf << "10K Camera Yaw, ";
@@ -2534,12 +2571,6 @@ void setup_output_hau(std::ofstream& wf)
     wf << "Post-Tilt Position X, Post-Tilt Position Y, Post-Tilt Position Z, ";
     wf << "Post-Upwarp Position X, Post-Upwarp Position Y, Post-Upwarp Position Z, ";
     wf << "Upwarp PU X, Upwarp PU Z";
-    
-    if (printOneOffSolutions)
-    {
-        wf << ", (OneOff) Stick q1q2, (OneOff) Stick q3, (OneOff) Stick XDir, (OneOff) Stick Start Speed,";
-        wf << "(OneOff) OUP PUX, (OneOff) OUP PUZ, (OneOff) OUP Num Squish Edges, (OneOff) OUP Squish Edge 0, (OneOff) OUP Squish Edge 1, (OneOff) OUP Squish Edge 2";
-    }
 
     wf << std::endl;
 }

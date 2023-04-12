@@ -9,7 +9,7 @@ void write_run_parameters(std::ofstream& wfrp, std::string timestamp);
 __device__ float atomicMinFloat(float* addr, float value); // This was taken from the following StackOverflow post: https://stackoverflow.com/a/51549250
 
 /** 
-Checks whether Mario's positions are within the bounds of the map (+/-8192 in all three axes).
+Checks whether Mario's position coordinates are within the bounds of the map (+/-8192 in all three axes) or within a PU after applying the short cast.
 */
 __device__ bool check_inbounds(const float* mario_pos);
 

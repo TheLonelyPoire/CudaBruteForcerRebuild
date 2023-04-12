@@ -27,9 +27,6 @@ extern bool usePositiveZ;
 // Flag for whether to stop the bruteforcer after the upwarp stage.
 extern bool stopAtUpwarp;
 
-// Flag for whether to print solutions that reach the second-to-last stage in addition to any full solutions (currently only implemented for the HAU-aligned solver).
-extern bool printOneOffSolutions;
-
 // The minimum number of quartersteps for the first frame of movement.
 extern int minQ1;
 // The maximum number of quartersteps for the first frame of movement.

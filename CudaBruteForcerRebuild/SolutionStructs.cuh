@@ -34,6 +34,7 @@
 // A collection of parameters that define a platform solution.
 struct PlatformSolution {
     float returnPosition[3];
+    float returnNormal[3];
     float endPosition[3];
     float endNormal[3];
     short endTriangles[2][3][3];
@@ -101,6 +102,8 @@ struct TenKSolutionHAU {
     float returnSpeedZ;
     int strainMag;
     int strainDYaw;
+    float frame2SpeedX;
+    float frame2SpeedZ;
 };
 
 // A collection of parameters that define a viable speed solution.

@@ -12,7 +12,6 @@ bool useZXSum = true;
 bool usePositiveZ = true;
 
 bool stopAtUpwarp = false;
-bool printOneOffSolutions = false;
 
 int minQ1 = 1;
 int maxQ1 = 1; // 2 for non-HAU, 4 for HAU, now set to 1
@@ -40,7 +39,7 @@ int nSamplesNY = 1;
 float deltaX = 0.5f;
 float deltaZ = 0.5f;
 
-std::string normalsInput = "input/crimsonNormals.txt";
+std::string normalsInput = "plotting/skyBlueNormalsQ2.txt";
 
 Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f };
 
