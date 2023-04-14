@@ -343,8 +343,6 @@ int main(int argc, char* argv[])
         printf("10K Frame 2 Q-Frames: (%d, %d)\n", minQ2, maxQ2);
         printf("10K Frame 3 Q-Frames: (%d, %d)\n", minQ3, maxQ3);
         printf("Off Platform Frames: %d\n", nPUFrames);
-        printf("Off Platform Frames: %d\n", nPUFrames);
-        printf("Off Platform Frames: %d\n", nPUFrames);
         printf("X Normal Range: (%g, %g)\n", minNX, maxNX);
         printf("Z Normal Range: (%g, %g)\n", minNZ, maxNZ);
         printf("Y Normal Range: (%g, %g)\n", minNY, maxNY);
@@ -360,6 +358,12 @@ int main(int argc, char* argv[])
         else
             printf("Delta Z: %f\n", deltaNZ);
         printf("Delta Y: %f\n", deltaNY);
+        if (normalsInput != "")
+        {
+            printf("Normals Input: ");
+            printf(normalsInput.c_str());
+            printf("\n");
+        }
         printf("\n");
     }
 
