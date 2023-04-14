@@ -1792,7 +1792,7 @@ __global__ void test_speed_solution() {
                                         short relX = (short)(int)intendedPosition[0];
                                         short relZ = (short)(int)intendedPosition[2];
 
-                                        if (relZ >= -306.0f && relZ <= 307.0f && relX >= -6041.0 && relX <= -306.f) {
+                                        if (relZ >= -306.0f && relZ <= 307.0f && relX >= -6041.0f && relX <= -306.0f) {
                                             currentNormalY = 1.0f;
                                             intendedPosition[1] = oneUpPlatformPosition[1] - 1.0f;
                                         }
