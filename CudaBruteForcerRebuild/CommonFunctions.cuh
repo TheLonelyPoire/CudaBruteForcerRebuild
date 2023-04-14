@@ -31,6 +31,8 @@ __device__ float find_closest_mag(float target);
 
 __global__ void init_mag_set();
 
+__global__ void init_camera_angles();
+
 __device__ int atan2b(double z, double x);
 
 __device__ int calculate_camera_yaw(float* currentPosition, float* lakituPosition);

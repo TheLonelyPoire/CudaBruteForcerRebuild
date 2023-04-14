@@ -31,6 +31,8 @@ extern __device__ float gCosineTableG[4096];
 extern __device__ int gArctanTableG[8192];
 extern __device__ int gReverseArctanTable[65537];
 
+extern __device__ bool validCameraAngle[65537];
+
 extern __device__ float platform_pos[3];
 extern __device__ short startTriangles[2][3][3];
 extern __device__ float startNormals[2][3];

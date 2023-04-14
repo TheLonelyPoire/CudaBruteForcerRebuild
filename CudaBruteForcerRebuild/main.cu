@@ -391,6 +391,9 @@ int main(int argc, char* argv[])
     std::cout << "    Initializing Magnitude Set...\n";
     init_mag_set << < 1, 1 >> > ();
 
+    std::cout << "    Initializing Camera Angles...\n";
+    init_camera_angles << <1, 1 >> > ();
+
     std::cout << "    Initializing Floors..........\n";
     initialise_floors << < 1, 1 >> >();
 

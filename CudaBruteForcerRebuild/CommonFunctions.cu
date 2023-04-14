@@ -281,6 +281,15 @@ __global__ void init_mag_set() {
     }
 }
 
+__global__ void init_camera_angles() {
+    for (int i = 0; i < 65536; i += 16) {
+        int angle = atan2sG(gCosineTableG[i >> 4], gSineTableG[i >> 4]);
+        angle = (65536 + angle) % 65536;
+
+        validCameraAngle[angle] = true;
+    }
+}
+
 __device__ int atan2b(double z, double x) {
     double A = 65536 * atan2(x, z) / (2 * M_PI);
     A = fmod(65536.0 + A, 65536.0);

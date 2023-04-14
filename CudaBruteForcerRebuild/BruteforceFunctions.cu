@@ -2106,16 +2106,20 @@ __global__ void check_speed_angle() {
 
                     for (int cIdx = minCameraIdx; cIdx <= maxCameraIdx; cIdx++) {
                         int cameraYaw = gArctanTableG[(8192 + cIdx) % 8192];
-                        int oupSolIdx = atomicAdd(&nOUPSolutions, 1);
+                        cameraYaw = (65536 + cameraYaw) % 65536;
 
-                        if (oupSolIdx < MAX_OUP_SOLUTIONS) {
-                            OUPSolution sol;
-                            sol.stickSolutionIdx = solIdx;
-                            sol.pux = (int)floor((oupX + 32768.0f) / 65536.0f);
-                            sol.puz = (int)floor((oupZ + 32768.0f) / 65536.0f);
-                            sol.angle = 16 * hau;
-                            sol.cameraYaw = cameraYaw;
-                            oupSolutions[oupSolIdx] = sol;
+                        if (validCameraAngle[cameraYaw]) {
+                            int oupSolIdx = atomicAdd(&nOUPSolutions, 1);
+
+                            if (oupSolIdx < MAX_OUP_SOLUTIONS) {
+                                OUPSolution sol;
+                                sol.stickSolutionIdx = solIdx;
+                                sol.pux = (int)floor((oupX + 32768.0) / 65536.0);
+                                sol.puz = (int)floor((oupZ + 32768.0) / 65536.0);
+                                sol.angle = 16 * hau;
+                                sol.cameraYaw = cameraYaw;
+                                oupSolutions[oupSolIdx] = sol;
+                            }
                         }
                     }
                 }
