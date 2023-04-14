@@ -1625,7 +1625,54 @@ __global__ void test_speed_solution() {
         oneUpPlatformPosition[0] = oneUpPlatformPosition[0] - (intendedPosition[0] - platSol->returnPosition[0]);
         oneUpPlatformPosition[2] = oneUpPlatformPosition[2] - (intendedPosition[2] - platSol->returnPosition[2]);
 
-        if ((short)(int)oneUpPlatformPosition[0] >= oneUpPlatformXMin && (short)(int)oneUpPlatformPosition[0] <= oneUpPlatformXMax && (short)(int)oneUpPlatformPosition[2] >= oneUpPlatformZMin && (short)(int)oneUpPlatformPosition[2] <= oneUpPlatformZMax) {
+        intendedPosition[0] = oneUpPlatformPosition[0];
+        intendedPosition[2] = oneUpPlatformPosition[2];
+
+        int returnSlideYaw = atan2sG(returnSpeedZ, returnSpeedX);
+        int newFacingDYaw = (short)(oupSol->angle - returnSlideYaw);
+
+        if (newFacingDYaw > 0 && newFacingDYaw <= 0x4000) {
+            if ((newFacingDYaw -= 0x200) < 0) {
+                newFacingDYaw = 0;
+            }
+        }
+        else if (newFacingDYaw > -0x4000 && newFacingDYaw < 0) {
+            if ((newFacingDYaw += 0x200) > 0) {
+                newFacingDYaw = 0;
+            }
+        }
+        else if (newFacingDYaw > 0x4000 && newFacingDYaw < 0x8000) {
+            if ((newFacingDYaw += 0x200) > 0x8000) {
+                newFacingDYaw = 0x8000;
+            }
+        }
+        else if (newFacingDYaw > -0x8000 && newFacingDYaw < -0x4000) {
+            if ((newFacingDYaw -= 0x200) < -0x8000) {
+                newFacingDYaw = -0x8000;
+            }
+        }
+
+        int returnFaceAngle = returnSlideYaw + newFacingDYaw;
+        returnFaceAngle = (65536 + returnFaceAngle) % 65536;
+
+        float postReturnVelX = returnSpeed * gSineTableG[returnFaceAngle >> 4];
+        float postReturnVelZ = returnSpeed * gCosineTableG[returnFaceAngle >> 4];
+
+        intendedPosition[0] = platSol->returnPosition[0] + postReturnVelX / 4.0;
+        intendedPosition[1] = platSol->returnPosition[1];
+        intendedPosition[2] = platSol->returnPosition[2] + postReturnVelZ / 4.0;
+
+        bool outOfBoundsTest = !check_inbounds(intendedPosition);
+
+        for (int f = 0; outOfBoundsTest && f < 3; f++) {
+            intendedPosition[0] = platSol->landingPositions[f][0] + platSol->landingFloorNormalsY[f] * (postReturnVelX / 4.0);
+            intendedPosition[1] = platSol->landingPositions[f][1];
+            intendedPosition[2] = platSol->landingPositions[f][2] + platSol->landingFloorNormalsY[f] * (postReturnVelZ / 4.0);
+
+            outOfBoundsTest = !check_inbounds(intendedPosition);
+        }
+
+        if (outOfBoundsTest && (short)(int)oneUpPlatformPosition[0] >= oneUpPlatformXMin && (short)(int)oneUpPlatformPosition[0] <= oneUpPlatformXMax && (short)(int)oneUpPlatformPosition[2] >= oneUpPlatformZMin && (short)(int)oneUpPlatformPosition[2] <= oneUpPlatformZMax) {
             oneUpPlatformPosition[1] = oneUpPlatformYMin + (oneUpPlatformYMax - oneUpPlatformYMin) * (((float)(short)(int)oneUpPlatformPosition[0] - oneUpPlatformXMin) / (oneUpPlatformXMax - oneUpPlatformXMin));
 
             bool fallTest = false;
@@ -1665,7 +1712,7 @@ __global__ void test_speed_solution() {
                 }
             }
 
-            if (fallTest && intendedPosition[1] <= platSol->returnPosition[1]) {
+            if (fallTest && intendedPosition[1] <= platSol->returnPosition[1] && intendedPosition[0] == platSol->returnPosition[0] && intendedPosition[0] == platSol->returnPosition[0] && intendedPosition[2] == platSol->returnPosition[2]) {
                 // TODO - REMOVE
                 atomicAdd(&nPass2Sols, 1);
                 for (int q1 = max(1, stickSol->q1q2 - 4); q1 <= min(4, stickSol->q1q2 - 1); q1++) {
