@@ -160,6 +160,9 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
         float lastYNormal = triangleNormals[floor_idx][1];
         float lastPos[3] = { marioPos[0], marioPos[1], marioPos[2] };
 
+        float landingPositions[3][3];
+        float landingNormalsY[3];
+
         for (int f = 0; f < maxFrames; f++) {
             float dx;
             float dy;
@@ -303,8 +306,21 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
                 marioPos[2] = mz;
             }
 
-            floor_height = 0.0;
+            floor_height = 0.0f;
             floor_idx = find_floor_triangles(marioPos, currentTriangles, triangleNormals, &floor_height);
+
+            if (f < 3) {
+                if (floor_idx == -1) {
+                    landingNormalsY[f] = 1.0f;
+                }
+                else {
+                    landingNormalsY[f] = triangleNormals[floor_idx][1];
+                }
+
+                landingPositions[f][0] = marioPos[0];
+                landingPositions[f][1] = marioPos[1];
+                landingPositions[f][2] = marioPos[2];
+            }
 
             bool oldOnPlatform = onPlatform;
             onPlatform = floor_idx != -1 && fabsf(marioPos[1] - floor_height) <= 4.0;
@@ -389,6 +405,12 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
                                 solution.endTriangles[j][k][1] = currentTriangles[j][k][1];
                                 solution.endTriangles[j][k][2] = currentTriangles[j][k][2];
                             }
+                        }
+                        for (int f = 0; f < 3; f++) {
+                            solution.landingPositions[f][0] = landingPositions[f][0];
+                            solution.landingPositions[f][1] = landingPositions[f][1];
+                            solution.landingPositions[f][2] = landingPositions[f][2];
+                            solution.landingFloorNormalsY[f] = landingNormalsY[f];
                         }
 
                         platSolutions[solIdx] = solution;

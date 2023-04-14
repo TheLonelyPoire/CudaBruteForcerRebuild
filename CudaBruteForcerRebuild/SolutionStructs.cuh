@@ -39,6 +39,8 @@ struct PlatformSolution {
     float endNormal[3];
     short endTriangles[2][3][3];
     float endTriangleNormals[2][3];
+    float landingFloorNormalsY[3];
+    float landingPositions[3][3];
     float penultimateFloorNormalY;
     float penultimatePosition[3];
     int nFrames;

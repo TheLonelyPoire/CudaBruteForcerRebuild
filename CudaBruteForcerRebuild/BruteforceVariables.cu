@@ -55,8 +55,6 @@ __device__ int correctStickSolIdx1;
 __device__ int nPass1Sols = 0;
 __device__ int nPass2Sols = 0;
 __device__ int nPass3Sols = 0;
-__device__ int nPass4Sols = 0;
-__device__ int nPass5Sols = 0;
 
 __device__ float currentLowestHeightDiff = MAX_HEIGHT_DIFFERENCE;
 
