@@ -326,8 +326,7 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
             onPlatform = floor_idx != -1 && fabsf(marioPos[1] - floor_height) <= 4.0;
 
             //Check if Mario is under the lava, or too far below the platform for it to conceivably be in reach later
-            if (marioPos[1] <= -3071.0f && (floor_idx != -1 || floor_height <= -3071.0f)
-                || (floor_idx != -1 && marioPos[1] - floor_height < -20.0f))
+            if ((floor_idx != -1 && floor_height <= -3071.0f) || (floor_idx != -1 && marioPos[1] - floor_height < -20.0f))
             {
                 break;
             }
