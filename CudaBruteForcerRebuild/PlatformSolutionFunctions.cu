@@ -13,6 +13,11 @@
 
 __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
 
+    float returnNormal[3];
+    returnNormal[0] = normal[0];
+    returnNormal[1] = normal[1];
+    returnNormal[2] = normal[2];
+    
     const float platformPos[3] = { platform_pos[0], platform_pos[1], platform_pos[2] };
     const short defaultTriangles[2][3][3] = { {{307, 307, -306}, {-306, 307, -306}, {-306, 307, 307}}, {{307, 307, -306}, {-306, 307, 307}, {307, 307, 307}} };
 
@@ -80,7 +85,7 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
         triangleNormals[h][2] *= invsqrt;
     }
 
-    float floor_height = 0.0;
+    float floor_height = 0.0f;
     int floor_idx = find_floor_triangles(marioPos, currentTriangles, triangleNormals, &floor_height);
 
     if (floor_idx != -1 && floor_height - 100.0f > -3071.0f && floor_height >= -2967.168)
@@ -366,6 +371,9 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
                         solution.returnPosition[0] = returnPos[0];
                         solution.returnPosition[1] = returnPos[1];
                         solution.returnPosition[2] = returnPos[2];
+                        solution.returnNormal[0] = returnNormal[0];
+                        solution.returnNormal[1] = returnNormal[1];
+                        solution.returnNormal[2] = returnNormal[2];
                         solution.nFrames = f;
                         solution.penultimateFloorNormalY = lastYNormal;
                         solution.penultimatePosition[0] = lastPos[0];

@@ -32,8 +32,6 @@ void write_run_parameters(std::ofstream& wfrp, std::string timestamp)
     if (useZXSum)
         wfrp << "Use Positive Z: " << usePositiveZ << "\n\n";
 
-    wfrp << "Print Off By One Solutions: " << printOneOffSolutions << "\n\n";
-
     wfrp << "MinQ1: " << minQ1 << '\n';
     wfrp << "MaxQ1: " << maxQ1 << '\n';
     wfrp << "MinQ2: " << minQ2 << '\n';

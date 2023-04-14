@@ -12,7 +12,6 @@ bool useZXSum = true;
 bool usePositiveZ = true;
 
 bool stopAtUpwarp = false;
-bool printOneOffSolutions = false;
 
 int minQ1 = 1;
 int maxQ1 = 1; // 2 for non-HAU, 4 for HAU, now set to 1
@@ -24,23 +23,23 @@ int maxQ3 = 1; // Default 2 for non-HAU, 4 for HAU, now set to 1
 int nPUFrames = 3;
 int maxFrames = 60; // 100 for non-HAU, 200 for HAU
 
-float minNX = 0.0f;
-float maxNX = 0.0f;
+float minNX = -0.22f;
+float maxNX = -0.20f;
 float minNZ = 0.0f;
 float maxNZ = 0.0f;
-float minNY = 0.0f;
-float maxNY = 0.0f;
-float minNZXSum = 0.0f;
-float maxNZXSum = 0.0f;
+float minNY = 0.80f;
+float maxNY = 0.82f;
+float minNZXSum = 0.60f;
+float maxNZXSum = 0.62f;
 
-int nSamplesNX = 241;
-int nSamplesNZ = 281;
-int nSamplesNY = 1;
+int nSamplesNX = 21;
+int nSamplesNZ = 21;
+int nSamplesNY = 21;
 
 float deltaX = 0.5f;
 float deltaZ = 0.5f;
 
-std::string normalsInput = "input/skyBlueNormals.txt";
+std::string normalsInput = "";
 
 Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f };
 

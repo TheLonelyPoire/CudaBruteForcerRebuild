@@ -34,6 +34,7 @@
 // A collection of parameters that define a platform solution.
 struct PlatformSolution {
     float returnPosition[3];
+    float returnNormal[3];
     float endPosition[3];
     float endNormal[3];
     short endTriangles[2][3][3];

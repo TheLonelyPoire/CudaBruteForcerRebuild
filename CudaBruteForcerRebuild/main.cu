@@ -152,9 +152,15 @@ int main(int argc, char* argv[])
             printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
             printf("                                   Default: %g %g %d\n", minNX, maxNX, nSamplesNX);
             printf("-nz <min_nz> <max_nz> <n_samples>: Inclusive range of z normals to be considered, and the number of normals to sample.\n");
+            printf("                                   ONLY USED IF -sum IS SET TO 0.\n");
             printf("                                   If min_nz==max_nz then n_samples will be set to 1.\n");
             printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
             printf("                                   Default: %g %g %d\n", minNZ, maxNZ, nSamplesNZ);
+            printf("-nzxsum <min_nzxsum> <max_nzxsum> <n_samples>: Inclusive range of zxsum normals to be considered, and the number of normals to sample.\n");
+            printf("                                               ONLY USED IF -sum IS SET TO 1.\n");
+            printf("                                               If min_nz==max_nz then n_samples will be set to 1.\n");
+            printf("                                               If a list of normals is provided, then these parameters will define displacements from each normal.\n");
+            printf("                                               Default: %g %g %d\n", minNZ, maxNZ, nSamplesNZ);
             printf("-ny <min_ny> <max_ny> <n_samples>: Inclusive range of y normals to be considered, and the number of normals to sample.\n");
             printf("                                   If min_ny==max_ny then n_samples will be set to 1.\n");
             printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
@@ -245,6 +251,19 @@ int main(int argc, char* argv[])
             maxNZ = std::stof(argv[i + 2]);
 
             if (minNZ == maxNZ) {
+                nSamplesNZ = 1;
+            }
+            else {
+                nSamplesNZ = std::stoi(argv[i + 3]);
+            }
+
+            i += 3;
+        }
+        else if (!strcmp(argv[i], "-nzxsum")) {
+            minNZXSum = std::stof(argv[i + 1]);
+            maxNZXSum = std::stof(argv[i + 2]);
+
+            if (minNZXSum == maxNZXSum) {
                 nSamplesNZ = 1;
             }
             else {
@@ -369,9 +388,9 @@ int main(int argc, char* argv[])
     init_mag_set << < 1, 1 >> > ();
 
     std::cout << "    Initializing Floors..........\n";
-    initialise_floors<< < 1, 1 >> >();
+    initialise_floors << < 1, 1 >> >();
 
-    set_platform_pos<< < 1, 1 >> >(platformPos[0], platformPos[1], platformPos[2]);
+    set_platform_pos << < 1, 1 >> >(platformPos[0], platformPos[1], platformPos[2]);
 
     short* dev_tris;
     float* dev_norms;
