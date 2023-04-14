@@ -387,10 +387,13 @@ int main(int argc, char* argv[])
     std::cout << "    Initializing Magnitude Set...\n";
     init_mag_set << < 1, 1 >> > ();
 
-    std::cout << "    Initializing Floors..........\n";
-    initialise_floors<< < 1, 1 >> >();
+    std::cout << "    Initializing Valid Camera Angles...\n";
+    init_camera_angles << <1, 1 >> > ();
 
-    set_platform_pos<< < 1, 1 >> >(platformPos[0], platformPos[1], platformPos[2]);
+    std::cout << "    Initializing Floors..........\n";
+    initialise_floors << < 1, 1 >> >();
+
+    set_platform_pos << < 1, 1 >> >(platformPos[0], platformPos[1], platformPos[2]);
 
     short* dev_tris;
     float* dev_norms;

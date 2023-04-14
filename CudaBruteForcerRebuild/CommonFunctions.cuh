@@ -29,6 +29,8 @@ __device__ int16_t atan2sG(float z, float x);
 
 __device__ float find_closest_mag(float target);
 
+__global__ void init_camera_angles();
+
 __global__ void init_mag_set();
 
 __device__ int atan2b(double z, double x);
