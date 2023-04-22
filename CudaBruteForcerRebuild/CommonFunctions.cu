@@ -108,8 +108,8 @@ void print_help(std::string &default_output_path, std::string &default_run_param
     printf("               Default: %g\n", deltaZ);
     printf("-p <platform_x> <platform_y> <platform_z>: Position of the pyramid platform.\n");
     printf("                                           Default: %g %g %g\n", platformPos[0], platformPos[1], platformPos[2]);
-    printf("-hau <0 or 1>: Flag for whether to run the HAU-Aligned solver or non-HAU-Aligned solver (0 for non-HAU-Aligned, 1 for HAU-Aligned).\n");
-    printf("               Default: %i\n", solverMode);
+    printf("-solver <0, 1, or 2>: Flag for which solver to use (0 for non-HAU-Aligned, 1 for HAU-Aligned, 2 for Slide Kick).\n");
+    printf("                      Default: %i\n", solverMode);
     printf("-ni: Optional path to a list of normals around which to sample. If left empty, no list of normals is used, and samples are displaced from (0,0,0).\n");
     printf("    Default: %s\n", normalsInput.c_str());
     printf("-o: Path to the output file.\n");
@@ -242,7 +242,7 @@ void process_argument(int& i, char* argv[], std::string& outFileSolutionData, st
         platformPos[2] = std::stof(argv[i + 3]);
         i += 3;
     }
-    else if (!strcmp(argv[i], "-hau")) {
+    else if (!strcmp(argv[i], "-solver")) {
         solverMode = std::stoi(argv[i + 1]);
         i += 1;
     }

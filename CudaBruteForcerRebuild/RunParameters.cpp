@@ -6,9 +6,9 @@ size_t memorySize = 10000000;
 bool computeMaxElevation = false;
 bool computeMinUpwarp = false;
 
-int solverMode = 1;
+int solverMode = 2;
 
-bool useZXSum = true;
+bool useZXSum = false;
 bool usePositiveZ = true;
 
 bool stopAtUpwarp = false;
@@ -23,26 +23,26 @@ int maxQ3 = 1; // Default 2 for non-HAU, 4 for HAU, now set to 1
 int nPUFrames = 3;
 int maxFrames = 60; // 100 for non-HAU, 200 for HAU
 
-float minNX = -0.22f;
-float maxNX = -0.20f;
-float minNZ = 0.0f;
-float maxNZ = 0.0f;
-float minNY = 0.80f;
-float maxNY = 0.82f;
+float minNX = -0.207f;
+float maxNX = -0.207f;
+float minNZ = 0.3865f;
+float maxNZ = 0.3865f;
+float minNY = 0.816666667f;
+float maxNY = 0.816666667f;
 float minNZXSum = 0.60f;
 float maxNZXSum = 0.62f;
 
-int nSamplesNX = 21;
-int nSamplesNZ = 21;
-int nSamplesNY = 21;
+int nSamplesNX = 1;
+int nSamplesNZ = 1;
+int nSamplesNY = 1;
 
 float deltaX = 0.5f;
 float deltaZ = 0.5f;
 
 std::string normalsInput = "";
 
-Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f }; // Pyra
-//Vec3f platformPos = { -2866.0f, -3225.0f, -715.0f }; // Mythra
+//Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f }; // Pyra
+Vec3f platformPos = { -2866.0f, -3225.0f, -715.0f }; // Mythra
 
 bool verbose = true;
 
