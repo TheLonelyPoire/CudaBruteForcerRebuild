@@ -20,13 +20,13 @@ def setupPlot(plotArray, sampleIdx, rParams : RangeParameters, nStages, pauseRat
     if aspect_ratio > 4:
         setupTickCounts = (3,20)
     elif aspect_ratio > 1.6:
-        setupTickCounts = (5,15)
+        setupTickCounts = (6,16)
     elif aspect_ratio > 0.625:
-        setupTickCounts = (10,10)
+        setupTickCounts = (11,11)
     elif aspect_ratio > 0.25:
-        setupTickCounts = (12,5)
+        setupTickCounts = (13,6)
     else:
-        setupTickCounts = (15,3)
+        setupTickCounts = (16,3)
 
     plt.xlabel("nX")
     stepSizeX = (rParams.maxNX - rParams.minNX) / (setupTickCounts[0] - 1)
@@ -55,13 +55,13 @@ def update_image_plot(implot, img, pauseRate : float, colmap : clrs.LinearSegmen
     return implot
 
 
-folderName = "../output/ImportantSolutions/"
-fileName = "normalStagesReached_4_13_23_39.bin"
+folderName = "../output/"
+fileName = "normalStagesReached_4_22_10_26.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
 
-rangeParameters = getRangeParametersFromFile(getCorrespondingRangeParametersFilename(folderName + fileName))
+rangeParameters, solverMode = getRunParametersFromFile(getCorrespondingRunParametersFilename(folderName + fileName))
 useParallelogram = False
 
 foundHeightDifference = False
@@ -119,13 +119,24 @@ if(useParallelogram):
     plotArr = getDataAsParallelogram(plotArr, rangeParameters)
     plotArrH = getDataAsParallelogram(plotArrH, rangeParameters)
 
-numStages = 10
+if solverMode == 0:
+    numStages = 5
+elif solverMode == 1:
+    numStages = 10
+elif solverMode == 2:
+    numStages = 8
+
 pauseRate = 0.01 
 
 if fileName.startswith("norm"):
-    colormap = CM_MARBLER if not useParallelogram else CM_MARBLER_PARA
-    if foundHeightDifference:
-        colormapH = CM_HEIGHT_GRADIENT if not useParallelogram else CM_HEIGHT_GRADIENT_PARA
+    if solverMode == 0:
+        colormap = CM_NON_HAU if not useParallelogram else CM_NON_HAU_PARA
+    elif solverMode == 1:
+        colormap = CM_MARBLER if not useParallelogram else CM_MARBLER_PARA
+        if foundHeightDifference:
+            colormapH = CM_HEIGHT_GRADIENT if not useParallelogram else CM_HEIGHT_GRADIENT_PARA
+    elif solverMode == 2:
+        colormap = CM_SLIDE_KICK if not useParallelogram else CM_SLIDE_KICK_PARA
 elif fileName.startswith("plat"):
     colormap = CM_HWR_BANDS 
 elif fileName.startswith("minUp"):

@@ -85,10 +85,13 @@
   <ItemGroup>
     <CudaCompile Include="BruteforceFunctions.cu" />
     <CudaCompile Include="BruteforceVariables.cu" />
+    <CudaCompile Include="HAUFunctions.cu" />
+    <CudaCompile Include="NonHAUFunctions.cu" />
     <CudaCompile Include="PlatformSolutionFunctions.cu" />
     <CudaCompile Include="Floors.cu" />
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="CommonFunctions.cu" />
+    <CudaCompile Include="SlideKickFunctions.cu" />
     <CudaCompile Include="SolutionStructs.cu" />
     <CudaCompile Include="UpwarpSolutionFunctions.cu" />
   </ItemGroup>
@@ -97,11 +100,14 @@
     <ClInclude Include="BruteforceFunctions.cuh" />
     <ClInclude Include="BruteforceVariables.cuh" />
     <ClInclude Include="Floors.cuh" />
+    <ClInclude Include="HAUFunctions.cuh" />
+    <ClInclude Include="NonHAUFunctions.cuh" />
     <ClInclude Include="Path.hpp" />
     <ClInclude Include="Platform.cuh" />
     <ClInclude Include="PlatformSolutionFunctions.cuh" />
     <ClInclude Include="RunParameters.hpp" />
     <ClInclude Include="CommonFunctions.cuh" />
+    <ClInclude Include="SlideKickFunctions.cuh" />
     <ClInclude Include="SolutionStructs.cuh" />
     <ClInclude Include="Surface.hpp" />
     <ClInclude Include="Trig.hpp" />

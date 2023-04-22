@@ -26,6 +26,7 @@ __device__ float platform_pos[3];
 __device__ short startTriangles[2][3][3];
 __device__ float startNormals[2][3];
 __device__ bool squishCeilings[4];
+__device__ float platformNormal[3];
 
 __device__ float oneUpPlatformNormalYLeft = 0.351623833;
 __device__ float oneUpPlatformNormalXLeft = -0.9361413717;
@@ -79,3 +80,15 @@ int nPUSolutionsCPU = 0;
 int nStickSolutionsCPU = 0;
 int nOUPSolutionsCPU = 0;
 int nSpeedSolutionsCPU = 0;
+
+// Slide Kick
+
+__device__ const int maxF3Turn = 522;
+__device__ float tenKFloors[nTenKFloors][9] = {
+    { -613.0, -306.0, -4607.0, -4453.0, -3071.0, -2661.0, -0.9361413717, 0.351623833, 0.0 },
+    { -613.0, -306.0, -4146.0, -3993.0, -2661.0, -3071.0, 0.936891377, 0.349620432, 0.0 },
+    { -7065.0, -6041.0, 307.0, 322.0, -2866.0, -3071.0, 0.0146370763, 0.03655698895, 0.9992243648 },
+    { -7065.0, -6553.0, 307.0, 322.0, -2866.0, -3071.0, 0, 0.07297563553, 0.9973337054 }
+};
+
+double maxSpeedSK = 6553600.0;

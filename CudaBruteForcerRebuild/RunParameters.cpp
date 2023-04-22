@@ -6,7 +6,7 @@ size_t memorySize = 10000000;
 bool computeMaxElevation = false;
 bool computeMinUpwarp = false;
 
-bool runHAUSolver = true;
+int solverMode = 1;
 
 bool useZXSum = true;
 bool usePositiveZ = true;
@@ -41,7 +41,8 @@ float deltaZ = 0.5f;
 
 std::string normalsInput = "";
 
-Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f };
+Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f }; // Pyra
+//Vec3f platformPos = { -2866.0f, -3225.0f, -715.0f }; // Mythra
 
 bool verbose = true;
 

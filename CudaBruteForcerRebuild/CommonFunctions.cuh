@@ -5,6 +5,13 @@
 
 void write_run_parameters(std::ofstream& wfrp, std::string timestamp);
 
+void print_help(std::string &default_output_path, std::string &default_run_params_path);
+
+void process_argument(int& i, char* argv[], std::string& outFileSolutionData, std::string& outFileRunParams);
+
+__global__ void print_success();
+
+
 
 __device__ float atomicMinFloat(float* addr, float value); // This was taken from the following StackOverflow post: https://stackoverflow.com/a/51549250
 
@@ -16,6 +23,8 @@ __device__ bool check_inbounds(const float* mario_pos);
 __global__ void set_squish_ceilings(float n0, float n1, float n2, float n3);
 
 __global__ void set_platform_pos(float x, float y, float z);
+
+__global__ void set_platform_normal(float nx, float ny, float nz);
 
 __global__ void calculate_10k_multipliers(int minQ1Q2, int maxQ1Q2, int minQ3, int maxQ3);
 

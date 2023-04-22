@@ -25,7 +25,7 @@ void write_run_parameters(std::ofstream& wfrp, std::string timestamp)
     if (computeMaxElevation)
         wfrp << "Computing Max Elevation!\n\n";
 
-    wfrp << "Is HAU-Aligned: " << runHAUSolver << "\n\n";
+    wfrp << "Solver Mode: " << solverMode << "\n\n";
 
     wfrp << "Is ZXSum: " << useZXSum << "\n\n";
 
@@ -66,6 +66,217 @@ void write_run_parameters(std::ofstream& wfrp, std::string timestamp)
     wfrp << "deltaZ: " << deltaZ << "\n\n";
 
     wfrp << "NormalListPath: " << normalsInput << "\n\n";
+
+    wfrp << "Platform Position: " << platformPos[0] << ", " << platformPos[1] << ", " << platformPos[2] << "\n";
+}
+
+void print_help(std::string &default_output_path, std::string &default_run_params_path)
+{
+    printf("BitFS Platform Max Tilt Brute Forcer.\n");
+    printf("This program accepts the following options:\n\n");
+    printf("-f <frames>: Maximum frames of platform tilt considered.\n");
+    printf("             Default: %d\n", maxFrames);
+    printf("-p <frames>: Number of frames of PU movement for 10k glitch\n");
+    printf("             Default: %d\n", nPUFrames);
+    printf("-q1 <min_q1> <max_q1>: Range of q-frames to test for frame 1 of 10k PU route.\n");
+    printf("                       Default: %d %d\n", minQ1, maxQ1);
+    printf("-q2 <min_q2> <max_q2>: Range of q-frames to test for frame 2 of 10k PU route.\n");
+    printf("                       Default: %d %d\n", minQ2, maxQ2);
+    printf("-q3 <min_q3> <max_q3>: Range of q-frames to test for frame 3 of 10k PU route.\n");
+    printf("                       Default: %d %d\n", minQ3, maxQ3);
+    printf("-nx <min_nx> <max_nx> <n_samples>: Inclusive range of x normals to be considered, and the number of normals to sample.\n");
+    printf("                                   If min_nx==max_nx then n_samples will be set to 1.\n");
+    printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
+    printf("                                   Default: %g %g %d\n", minNX, maxNX, nSamplesNX);
+    printf("-nz <min_nz> <max_nz> <n_samples>: Inclusive range of z normals to be considered, and the number of normals to sample.\n");
+    printf("                                   ONLY USED IF -sum IS SET TO 0.\n");
+    printf("                                   If min_nz==max_nz then n_samples will be set to 1.\n");
+    printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
+    printf("                                   Default: %g %g %d\n", minNZ, maxNZ, nSamplesNZ);
+    printf("-nzxsum <min_nzxsum> <max_nzxsum> <n_samples>: Inclusive range of zxsum normals to be considered, and the number of normals to sample.\n");
+    printf("                                               ONLY USED IF -sum IS SET TO 1.\n");
+    printf("                                               If min_nz==max_nz then n_samples will be set to 1.\n");
+    printf("                                               If a list of normals is provided, then these parameters will define displacements from each normal.\n");
+    printf("                                               Default: %g %g %d\n", minNZ, maxNZ, nSamplesNZ);
+    printf("-ny <min_ny> <max_ny> <n_samples>: Inclusive range of y normals to be considered, and the number of normals to sample.\n");
+    printf("                                   If min_ny==max_ny then n_samples will be set to 1.\n");
+    printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
+    printf("                                   Default: %g %g %d\n", minNY, maxNY, nSamplesNY);
+    printf("-dx <delta_x>: x coordinate spacing of positions on the platform.\n");
+    printf("               Default: %g\n", deltaX);
+    printf("-dz <delta_z>: z coordinate spacing of positions on the platform.\n");
+    printf("               Default: %g\n", deltaZ);
+    printf("-p <platform_x> <platform_y> <platform_z>: Position of the pyramid platform.\n");
+    printf("                                           Default: %g %g %g\n", platformPos[0], platformPos[1], platformPos[2]);
+    printf("-hau <0 or 1>: Flag for whether to run the HAU-Aligned solver or non-HAU-Aligned solver (0 for non-HAU-Aligned, 1 for HAU-Aligned).\n");
+    printf("               Default: %i\n", solverMode);
+    printf("-ni: Optional path to a list of normals around which to sample. If left empty, no list of normals is used, and samples are displaced from (0,0,0).\n");
+    printf("    Default: %s\n", normalsInput.c_str());
+    printf("-o: Path to the output file.\n");
+    printf("    Default: %s\n", default_output_path.c_str());
+    printf("-rp: Path to the run parameters file.\n");
+    printf("     Default: %s\n", default_run_params_path.c_str());
+    printf("-sum <0 or 1>: Flag for whether to parameterize by Z or by ZXSum (0 for Z, 1 for ZXSum).\n");
+    printf("               Default: %i\n", useZXSum);
+    printf("-posZ <0 or 1>: Flag for whether to use postive Z or negative Z (0 for -Z, 1 for +Z).\n");
+    printf("                Only used when parameterizing by ZXSum instead of Z.\n");
+    printf("                Default: %i\n", usePositiveZ);
+    printf("-ssp <0, 1, or 2>: Printing mode for subsolutions (0 for no subsolution printing, 1 for minimal printing, 2 for full printing).\n");
+    printf("                   Default: %i\n", subSolutionPrintingMode);
+    printf("-t <threads>: Number of CUDA threads to assign to the program.\n");
+    printf("              Default: %d\n", nThreads);
+    printf("-m <memory>: Amount of GPU memory to assign to the program.\n");
+    printf("             Default: %d\n", memorySize);
+    printf("-v: Verbose mode. Prints all parameters used in brute force.\n");
+    printf("    Default: off\n");
+    printf("-h --help: Prints this text.\n");
+    exit(0);
+}
+
+void process_argument(int& i, char* argv[], std::string& outFileSolutionData, std::string& outFileRunParams)
+{
+    if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
+        print_help(outFileSolutionData, outFileRunParams);
+    }
+    else if (!strcmp(argv[i], "-f")) {
+        maxFrames = std::stoi(argv[i + 1]);
+
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-q1")) {
+        minQ1 = std::stoi(argv[i + 1]);
+        maxQ1 = std::stoi(argv[i + 2]);
+
+        i += 2;
+    }
+    else if (!strcmp(argv[i], "-q2")) {
+        minQ2 = std::stoi(argv[i + 1]);
+        maxQ2 = std::stoi(argv[i + 2]);
+
+        i += 2;
+    }
+    else if (!strcmp(argv[i], "-q3")) {
+        minQ3 = std::stoi(argv[i + 1]);
+        maxQ3 = std::stoi(argv[i + 2]);
+
+        i += 2;
+    }
+    else if (!strcmp(argv[i], "-p")) {
+        nPUFrames = std::stoi(argv[i + 1]);
+
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-t")) {
+        nThreads = std::stoi(argv[i + 1]);
+
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-m")) {
+        memorySize = std::stoi(argv[i + 1]);
+
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-nx")) {
+        minNX = std::stof(argv[i + 1]);
+        maxNX = std::stof(argv[i + 2]);
+
+        if (minNX == maxNX) {
+            nSamplesNX = 1;
+        }
+        else {
+            nSamplesNX = std::stoi(argv[i + 3]);
+        }
+
+        i += 3;
+    }
+    else if (!strcmp(argv[i], "-nz")) {
+        minNZ = std::stof(argv[i + 1]);
+        maxNZ = std::stof(argv[i + 2]);
+
+        if (minNZ == maxNZ) {
+            nSamplesNZ = 1;
+        }
+        else {
+            nSamplesNZ = std::stoi(argv[i + 3]);
+        }
+
+        i += 3;
+    }
+    else if (!strcmp(argv[i], "-nzxsum")) {
+        minNZXSum = std::stof(argv[i + 1]);
+        maxNZXSum = std::stof(argv[i + 2]);
+
+        if (minNZXSum == maxNZXSum) {
+            nSamplesNZ = 1;
+        }
+        else {
+            nSamplesNZ = std::stoi(argv[i + 3]);
+        }
+
+        i += 3;
+    }
+    else if (!strcmp(argv[i], "-ny")) {
+        minNY = std::stof(argv[i + 1]);
+        maxNY = std::stof(argv[i + 2]);
+
+        if (minNY == maxNY) {
+            nSamplesNY = 1;
+        }
+        else {
+            nSamplesNY = std::stoi(argv[i + 3]);
+        }
+
+        i += 3;
+    }
+    else if (!strcmp(argv[i], "-dx")) {
+        deltaX = std::stof(argv[i + 1]);
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-dz")) {
+        deltaZ = std::stof(argv[i + 1]);
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-p")) {
+        platformPos[0] = std::stof(argv[i + 1]);
+        platformPos[1] = std::stof(argv[i + 2]);
+        platformPos[2] = std::stof(argv[i + 3]);
+        i += 3;
+    }
+    else if (!strcmp(argv[i], "-hau")) {
+        solverMode = std::stoi(argv[i + 1]);
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-ni")) {
+        normalsInput = argv[i + 1];
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-o")) {
+        outFileSolutionData = argv[i + 1];
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-rp")) {
+        outFileRunParams = argv[i + 1];
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-sum")) {
+        useZXSum = std::stoi(argv[i + 1]);
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-posZ")) {
+        usePositiveZ = std::stoi(argv[i + 1]);
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-ssp")) {
+        subSolutionPrintingMode = std::stoi(argv[i + 1]);
+        i += 1;
+    }
+    else if (!strcmp(argv[i], "-v")) {
+        verbose = true;
+    }
+}
+
+__global__ void print_success() {
+    printf("CUDA code completed successfully.\n");
 }
 
 // This was taken from the following StackOverflow post: https://stackoverflow.com/a/51549250
@@ -96,6 +307,12 @@ __global__ void set_platform_pos(float x, float y, float z) {
     platform_pos[0] = x;
     platform_pos[1] = y;
     platform_pos[2] = z;
+}
+
+__global__ void set_platform_normal(float nx, float ny, float nz) {
+    platformNormal[0] = nx;
+    platformNormal[1] = ny;
+    platformNormal[2] = nz;
 }
 
 __global__ void calculate_10k_multipliers(int minQ1Q2, int maxQ1Q2, int minQ3, int maxQ3) {

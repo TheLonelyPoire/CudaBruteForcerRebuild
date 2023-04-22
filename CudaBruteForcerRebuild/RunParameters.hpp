@@ -16,7 +16,7 @@ extern bool computeMaxElevation;
 extern bool computeMinUpwarp;
 
 // Flag for whether to run the HAU-sligned solver or the non-HAU aligned solver.
-extern bool runHAUSolver;
+extern int solverMode;
 
 // Flag for whether to parameterize using nZ or by using |nX| + |nZ|
 extern bool useZXSum;

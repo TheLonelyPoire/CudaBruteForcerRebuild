@@ -383,6 +383,7 @@ __device__ void try_position(float* marioPos, float* normal, int maxFrames) {
                         solution.endPosition[0] = marioPos[0];
                         solution.endPosition[1] = marioPos[1];
                         solution.endPosition[2] = marioPos[2];
+                        solution.endFloorIdx = floor_idx;
                         solution.returnPosition[0] = returnPos[0];
                         solution.returnPosition[1] = returnPos[1];
                         solution.returnPosition[2] = returnPos[2];

@@ -16,7 +16,10 @@
 #include "BruteforceVariables.cuh"
 #include "CommonFunctions.cuh"
 #include "Floors.cuh"
+#include "HAUFunctions.cuh"
+#include "NonHAUFunctions.cuh"
 #include "RunParameters.hpp"
+#include "SlideKickFunctions.cuh";
 #include "SolutionStructs.cuh"
 
 std::ofstream out_stream;
@@ -133,203 +136,15 @@ int main(int argc, char* argv[])
     else
         nSamplesNZ = minNZXSum == maxNZXSum ? 1 : nSamplesNZ;
 
+
+    // Process arguments passed to the bruteforcer (see CommonFunctions.cu for process_argument() definition)
     for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
-            printf("BitFS Platform Max Tilt Brute Forcer.\n");
-            printf("This program accepts the following options:\n\n");
-            printf("-f <frames>: Maximum frames of platform tilt considered.\n");
-            printf("             Default: %d\n", maxFrames);
-            printf("-p <frames>: Number of frames of PU movement for 10k glitch\n");
-            printf("             Default: %d\n", nPUFrames);
-            printf("-q1 <min_q1> <max_q1>: Range of q-frames to test for frame 1 of 10k PU route.\n");
-            printf("                       Default: %d %d\n", minQ1, maxQ1);
-            printf("-q2 <min_q2> <max_q2>: Range of q-frames to test for frame 2 of 10k PU route.\n");
-            printf("                       Default: %d %d\n", minQ2, maxQ2);
-            printf("-q3 <min_q3> <max_q3>: Range of q-frames to test for frame 3 of 10k PU route.\n");
-            printf("                       Default: %d %d\n", minQ3, maxQ3);
-            printf("-nx <min_nx> <max_nx> <n_samples>: Inclusive range of x normals to be considered, and the number of normals to sample.\n");
-            printf("                                   If min_nx==max_nx then n_samples will be set to 1.\n");
-            printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
-            printf("                                   Default: %g %g %d\n", minNX, maxNX, nSamplesNX);
-            printf("-nz <min_nz> <max_nz> <n_samples>: Inclusive range of z normals to be considered, and the number of normals to sample.\n");
-            printf("                                   ONLY USED IF -sum IS SET TO 0.\n");
-            printf("                                   If min_nz==max_nz then n_samples will be set to 1.\n");
-            printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
-            printf("                                   Default: %g %g %d\n", minNZ, maxNZ, nSamplesNZ);
-            printf("-nzxsum <min_nzxsum> <max_nzxsum> <n_samples>: Inclusive range of zxsum normals to be considered, and the number of normals to sample.\n");
-            printf("                                               ONLY USED IF -sum IS SET TO 1.\n");
-            printf("                                               If min_nz==max_nz then n_samples will be set to 1.\n");
-            printf("                                               If a list of normals is provided, then these parameters will define displacements from each normal.\n");
-            printf("                                               Default: %g %g %d\n", minNZ, maxNZ, nSamplesNZ);
-            printf("-ny <min_ny> <max_ny> <n_samples>: Inclusive range of y normals to be considered, and the number of normals to sample.\n");
-            printf("                                   If min_ny==max_ny then n_samples will be set to 1.\n");
-            printf("                                   If a list of normals is provided, then these parameters will define displacements from each normal.\n");
-            printf("                                   Default: %g %g %d\n", minNY, maxNY, nSamplesNY);
-            printf("-dx <delta_x>: x coordinate spacing of positions on the platform.\n");
-            printf("               Default: %g\n", deltaX);
-            printf("-dz <delta_z>: z coordinate spacing of positions on the platform.\n");
-            printf("               Default: %g\n", deltaZ);
-            printf("-p <platform_x> <platform_y> <platform_z>: Position of the pyramid platform.\n");
-            printf("                                           Default: %g %g %g\n", platformPos[0], platformPos[1], platformPos[2]);
-            printf("-hau <0 or 1>: Flag for whether to run the HAU-Aligned solver or non-HAU-Aligned solver (0 for non-HAU-Aligned, 1 for HAU-Aligned).\n");
-            printf("               Default: %i\n", runHAUSolver);
-            printf("-ni: Optional path to a list of normals around which to sample. If left empty, no list of normals is used, and samples are displaced from (0,0,0).\n");
-            printf("    Default: %s\n", normalsInput.c_str()); 
-            printf("-o: Path to the output file.\n");
-            printf("    Default: %s\n", outFileSolutionData.c_str());
-            printf("-rp: Path to the run parameters file.\n");
-            printf("     Default: %s\n", outFileRunParams.c_str());
-            printf("-sum <0 or 1>: Flag for whether to parameterize by Z or by ZXSum (0 for Z, 1 for ZXSum).\n");
-            printf("               Default: %i\n", useZXSum);
-            printf("-posZ <0 or 1>: Flag for whether to use postive Z or negative Z (0 for -Z, 1 for +Z).\n");
-            printf("                Only used when parameterizing by ZXSum instead of Z.\n");
-            printf("                Default: %i\n", usePositiveZ);
-            printf("-ssp <0, 1, or 2>: Printing mode for subsolutions (0 for no subsolution printing, 1 for minimal printing, 2 for full printing).\n");
-            printf("                   Default: %i\n", subSolutionPrintingMode);
-            printf("-t <threads>: Number of CUDA threads to assign to the program.\n");
-            printf("              Default: %d\n", nThreads);
-            printf("-m <memory>: Amount of GPU memory to assign to the program.\n");
-            printf("             Default: %d\n", memorySize);
-            printf("-v: Verbose mode. Prints all parameters used in brute force.\n");
-            printf("    Default: off\n");
-            printf("-h --help: Prints this text.\n");
-            exit(0);
-        }
-        else if (!strcmp(argv[i], "-f")) {
-            maxFrames = std::stoi(argv[i + 1]);
+        process_argument(i, argv, outFileSolutionData, outFileRunParams);
+    }
 
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-q1")) {
-            minQ1 = std::stoi(argv[i + 1]);
-            maxQ1 = std::stoi(argv[i + 2]);
-
-            i += 2;
-        }
-        else if (!strcmp(argv[i], "-q2")) {
-            minQ2 = std::stoi(argv[i + 1]);
-            maxQ2 = std::stoi(argv[i + 2]);
-
-            i += 2;
-        }
-        else if (!strcmp(argv[i], "-q3")) {
-            minQ3 = std::stoi(argv[i + 1]);
-            maxQ3 = std::stoi(argv[i + 2]);
-
-            i += 2;
-        }
-        else if (!strcmp(argv[i], "-p")) {
-            nPUFrames = std::stoi(argv[i + 1]);
-
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-t")) {
-            nThreads = std::stoi(argv[i + 1]);
-
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-m")) {
-            memorySize = std::stoi(argv[i + 1]);
-
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-nx")) {
-            minNX = std::stof(argv[i + 1]);
-            maxNX = std::stof(argv[i + 2]);
-
-            if (minNX == maxNX) {
-                nSamplesNX = 1;
-            }
-            else {
-                nSamplesNX = std::stoi(argv[i + 3]);
-            }
-
-            i += 3;
-        }
-        else if (!strcmp(argv[i], "-nz")) {
-            minNZ = std::stof(argv[i + 1]);
-            maxNZ = std::stof(argv[i + 2]);
-
-            if (minNZ == maxNZ) {
-                nSamplesNZ = 1;
-            }
-            else {
-                nSamplesNZ = std::stoi(argv[i + 3]);
-            }
-
-            i += 3;
-        }
-        else if (!strcmp(argv[i], "-nzxsum")) {
-            minNZXSum = std::stof(argv[i + 1]);
-            maxNZXSum = std::stof(argv[i + 2]);
-
-            if (minNZXSum == maxNZXSum) {
-                nSamplesNZ = 1;
-            }
-            else {
-                nSamplesNZ = std::stoi(argv[i + 3]);
-            }
-
-            i += 3;
-        }
-        else if (!strcmp(argv[i], "-ny")) {
-            minNY = std::stof(argv[i + 1]);
-            maxNY = std::stof(argv[i + 2]);
-
-            if (minNY == maxNY) {
-                nSamplesNY = 1;
-            }
-            else {
-                nSamplesNY = std::stoi(argv[i + 3]);
-            }
-
-            i += 3;
-        }
-        else if (!strcmp(argv[i], "-dx")) {
-            deltaX = std::stof(argv[i + 1]);
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-dz")) {
-            deltaZ = std::stof(argv[i + 1]);
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-p")) {
-            platformPos[0] = std::stof(argv[i + 1]);
-            platformPos[1] = std::stof(argv[i + 2]);
-            platformPos[2] = std::stof(argv[i + 3]);
-            i += 3;
-        }
-        else if (!strcmp(argv[i], "-hau")) {
-            runHAUSolver = std::stoi(argv[i + 1]);
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-ni")) {
-            normalsInput = argv[i + 1];
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-o")) {
-            outFileSolutionData = argv[i + 1];
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-rp")) {
-            outFileRunParams = argv[i + 1];
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-sum")) {
-            useZXSum = std::stoi(argv[i + 1]);
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-posZ")) {
-            usePositiveZ = std::stoi(argv[i + 1]);
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-ssp")) {
-            subSolutionPrintingMode = std::stoi(argv[i + 1]);
-            i += 1;
-        }
-        else if (!strcmp(argv[i], "-v")) {
-            verbose = true;
-        }
+    if (nPUFrames != 3 && solverMode == 2) {
+        fprintf(stderr, "Error: The slide kick brute forcer currently only supports 3 frame 10k routes. Value selected: %d.", nPUFrames);
+        return 1;
     }
 
     const float deltaNX = (nSamplesNX > 1) ? (maxNX - minNX) / (nSamplesNX - 1) : 0;
@@ -337,6 +152,7 @@ int main(int argc, char* argv[])
     const float deltaNY = (nSamplesNY > 1) ? (maxNY - minNY) / (nSamplesNY - 1) : 0;
     const float deltaNZXSum = (nSamplesNZ > 1) ? (maxNZXSum - minNZXSum) / (nSamplesNZ - 1) : 0;
 
+    // TODO - Adjust printing based on solver mode
     if (verbose) {
         printf("Max Frames: %d\n", maxFrames);
         printf("10K Frame 1 Q-Frames: (%d, %d)\n", minQ1, maxQ1);
@@ -425,7 +241,8 @@ int main(int argc, char* argv[])
     if (!computeMaxElevation && !computeMinUpwarp)
     {
         wfns = std::ofstream(outFileNormalStages, std::ios::out | std::ios::binary);
-        wffhds = std::ofstream(outFileFinalHeightDifferences, std::ios::out | std::ios::binary);
+        if(solverMode == 1)
+            wffhds = std::ofstream(outFileFinalHeightDifferences, std::ios::out | std::ios::binary);
     }
     else
     {
@@ -442,10 +259,13 @@ int main(int argc, char* argv[])
     {
         normalStages = (char*)std::calloc(sizeof(char), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
 
-        finalHeightDiffs = (float*)std::malloc(sizeof(float) * normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
-        for (int i = 0; i < normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ; ++i)
+        if (solverMode == 1)
         {
-            finalHeightDiffs[i] = MAX_HEIGHT_DIFFERENCE;
+            finalHeightDiffs = (float*)std::malloc(sizeof(float) * normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ);
+            for (int i = 0; i < normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ; ++i)
+            {
+                finalHeightDiffs[i] = MAX_HEIGHT_DIFFERENCE;
+            }
         }
     }
     else
@@ -460,10 +280,18 @@ int main(int argc, char* argv[])
 
     wfrp.close();
 
-    if (runHAUSolver)
-        setup_output_hau(wf);
-    else
+    switch (solverMode)
+    {
+    case 0:
         setup_output_non_hau(wf);
+        break;
+    case 1:
+        setup_output_hau(wf);
+        break;
+    case 2:
+        setup_output_slide_kick(wf);
+        break;
+    }
 
     std::unordered_map<uint64_t, PUSolution> puSolutionLookup;
 
@@ -474,6 +302,36 @@ int main(int argc, char* argv[])
     bool currentPositive;
 
     std::cout << "\n  Startup Complete!\n\nStarting Bruteforcer...\n\n";
+
+    NonHAUSolStruct nonHAUSolutions;
+    HAUSolStruct HAUSolutions;
+    SKSolStruct slideKickSolutions;
+    switch(solverMode)
+    {
+    case 0:
+        init_solution_structs_non_hau(&nonHAUSolutions);
+        break;
+    case 1:
+        init_solution_structs_hau(&HAUSolutions);
+        break;
+    case 2:
+        init_solution_structs_sk(&slideKickSolutions);
+        break;
+    }
+
+
+    short* floorPoints, *devFloorPoints;
+    bool* squishEdges, *devSquishEdges;
+    if (solverMode == 2)
+    {
+        floorPoints = (short*)std::malloc(4 * 3 * sizeof(short));
+        cudaMalloc((void**)&devFloorPoints, 4 * 3 * sizeof(short));
+
+        squishEdges = (bool*)std::malloc(4 * sizeof(bool));
+        cudaMalloc((void**)&devSquishEdges, 4 * sizeof(bool));
+    }
+
+    float normal_offsets_cpu[4][3] = { {0.01f, -0.01f, 0.01f}, {-0.01f, -0.01f, 0.01f}, {-0.01f, -0.01f, -0.01f}, {0.01f, -0.01f, -0.01f} };
 
     for (normalIter; normalIter < normals.end(); normalIter++){
         if (useZXSum)
@@ -507,8 +365,10 @@ int main(int argc, char* argv[])
                         run_max_elevation_computations(current_normal, h, i, j, normX, normY, normZ, host_tris, host_norms, dev_tris, dev_norms, puSolutionLookup, wf, platformHWRs);
                     else if (computeMinUpwarp)
                         run_min_upwarp_speed_computations(current_normal, h, i, j, normX, normY, normZ, host_tris, host_norms, dev_tris, dev_norms, puSolutionLookup, wf, platformHWRs);
-                    else
+                    else if (solverMode == 0 || solverMode == 1)
                         run_common_bruteforcer(current_normal, h, i, j, normX, normY, normZ, host_tris, host_norms, dev_tris, dev_norms, puSolutionLookup, wf, normalStages, finalHeightDiffs);
+                    else
+                        run_slide_kick_bruteforcer(current_normal, h, i, j, normX, normY, normZ, host_tris, host_norms, dev_tris, dev_norms, slideKickSolutions, normal_offsets_cpu, floorPoints, devFloorPoints, squishEdges, devSquishEdges, wf, normalStages);
                 }
             }
         }
@@ -518,10 +378,29 @@ int main(int argc, char* argv[])
 
     auto endTime = std::chrono::system_clock::now();
 
+    print_success << <1, 1 >> > ();
+
     free(host_tris);
     free(host_norms);
     cudaFree(dev_tris);
     cudaFree(dev_norms);
+
+    switch(solverMode)
+    {
+    case 0:
+        free_solution_pointers_non_hau(&nonHAUSolutions);
+        break;
+    case 1:
+        free_solution_pointers_hau(&HAUSolutions);
+        break;
+    case 2:
+        free(floorPoints);
+        free(squishEdges);
+        cudaFree(devFloorPoints);
+        cudaFree(devSquishEdges);
+        free_solution_pointers_sk(&slideKickSolutions);
+    }
+
     wf.close();
 
     std::cout << "Writing output to file!\n";
@@ -532,9 +411,12 @@ int main(int argc, char* argv[])
         free(normalStages);
         wfns.close();
 
-        wffhds.write(reinterpret_cast<const char*>(finalHeightDiffs), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ * sizeof(float));
-        free(finalHeightDiffs);
-        wffhds.close();
+        if (solverMode == 1)
+        {
+            wffhds.write(reinterpret_cast<const char*>(finalHeightDiffs), normals.size() * nSamplesNY * nSamplesNX * nSamplesNZ * sizeof(float));
+            free(finalHeightDiffs);
+            wffhds.close();
+        }
     }
     else
     {

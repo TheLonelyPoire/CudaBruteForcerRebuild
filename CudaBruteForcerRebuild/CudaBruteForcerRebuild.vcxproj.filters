@@ -36,6 +36,9 @@
     <ClInclude Include="PlatformSolutionFunctions.cuh" />
     <ClInclude Include="UpwarpSolutionFunctions.cuh" />
     <ClInclude Include="CommonFunctions.cuh" />
+    <ClInclude Include="SlideKickFunctions.cuh" />
+    <ClInclude Include="HAUFunctions.cuh" />
+    <ClInclude Include="NonHAUFunctions.cuh" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="UnusedFiles">
@@ -51,5 +54,8 @@
     <CudaCompile Include="PlatformSolutionFunctions.cu" />
     <CudaCompile Include="UpwarpSolutionFunctions.cu" />
     <CudaCompile Include="CommonFunctions.cu" />
+    <CudaCompile Include="SlideKickFunctions.cu" />
+    <CudaCompile Include="HAUFunctions.cu" />
+    <CudaCompile Include="NonHAUFunctions.cu" />
   </ItemGroup>
 </Project>

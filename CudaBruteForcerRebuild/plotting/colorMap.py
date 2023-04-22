@@ -48,6 +48,8 @@ def hex_to_rgb(hex_code):
 
     return (red, green, blue)
 
+# Color Maps
+
 CM_FRACTAL = computeColorMapFromColorList([(0,0,0),
                                             (0,0,0.5),
                                             (0,0,1),
@@ -99,6 +101,19 @@ CM_EXTRA_STAGES_ORIG = computeColorMapFromColorList([(0,0,0),
                                                     (1,1,0),
                                                     (1,1,1)])
 
+CM_NON_HAU = computeColorMapFromHexList(
+    ['#000000', '#00ADFF', 
+     '#FF4030', '#00C000', 
+     '#FFF200', '#FFFFFF']
+)
+
+CM_NON_HAU_PARA = computeColorMapFromHexList(
+    ['#404000',
+     '#000000', '#00ADFF', 
+     '#FF4030', '#00C000', 
+     '#FFF200', '#FFFFFF']
+)
+
 CM_MARBLER = computeColorMapFromHexList(
     ['#000000', '#101080', 
      '#900010', '#006050', 
@@ -111,6 +126,21 @@ CM_MARBLER_PARA = computeColorMapFromHexList(
     ['#404000',
      '#000000', '#101080', 
      '#900010', '#006050', 
+     '#902090', '#00ADFF', 
+     '#FF4030', '#00C000', 
+     '#FFF200', '#FFFFFF']
+)
+
+CM_SLIDE_KICK = computeColorMapFromHexList(
+    ['#000000', '#006050', 
+     '#902090', '#00ADFF', 
+     '#FF4030', '#00C000', 
+     '#FFF200', '#FFFFFF']
+)
+
+CM_SLIDE_KICK_PARA = computeColorMapFromHexList(
+    ['#404000',
+     '#000000', '#006050', 
      '#902090', '#00ADFF', 
      '#FF4030', '#00C000', 
      '#FFF200', '#FFFFFF']

@@ -32,6 +32,12 @@ class RangeParameters:
         self.useZXSum = useZXSum
         self.usePositiveZ = useZPositive
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
     def getXStepSize(self):
         return (self.maxNX - self.minNX) / (self.nSamplesNX - 1)
         
@@ -81,7 +87,7 @@ class RangeParameters:
             return self.minNZXSum - maxMagX, self.maxNZXSum - minMagX
 
 
-def getCorrespondingRangeParametersFilename(normStagesPath : str):
+def getCorrespondingRunParametersFilename(normStagesPath : str):
     dirIndex = normStagesPath.rfind('/')
     if normStagesPath[dirIndex+1:].startswith("norm"):
         timestampIndex = dirIndex + len("normalStagesReached") + 1
@@ -94,7 +100,7 @@ def getCorrespondingRangeParametersFilename(normStagesPath : str):
     return normStagesPath[:dirIndex+1] + "runParameters" + normStagesPath[timestampIndex:fileExtensionIndex] + ".txt"
 
 
-def getRangeParametersFromFile(runParamsPath : str):
+def getRunParametersFromFile(runParamsPath : str):
     with open(runParamsPath) as file:
         lines = file.readlines()
         for line in lines:
@@ -122,11 +128,15 @@ def getRangeParametersFromFile(runParamsPath : str):
                 samplesZ = int(line[12:].strip())
             elif line.startswith("Is ZXSum:"):
                 isZXSum = bool(line[10:].strip())
+            elif line.startswith("Solver Mode:"):
+                solverMode = int(line[12:].strip())
+            elif line.startswith("Is HAU-Aligned:"):
+                solverMode = int(line[15:].strip())
 
     return RangeParameters(minNX, maxNX, 
                     minNZXSum if isZXSum else minNZ, maxNZXSum if isZXSum else maxNZ,
                     minNY, maxNY,
-                    samplesX, samplesZ, samplesY, isZXSum)
+                    samplesX, samplesZ, samplesY, isZXSum), solverMode
 
 
 def getIntDataFromBinaryFile(fileName, folderName="../output/ImportantSolutions/", nSamplesY=0, nSamplesX=0, nSamplesZ=0):

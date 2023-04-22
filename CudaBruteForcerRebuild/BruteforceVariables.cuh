@@ -4,10 +4,12 @@
 
 # define M_PI     3.14159265358979323846  /* pi */
 # define MAX_HEIGHT_DIFFERENCE   200.0f;
+# define NUM_10_K_FLOORS 4;
 
 extern __device__ const short default_triangles[2][3][3];
 extern __device__ const float normal_offsets[4][3];
 
+extern __device__ float platformNormal[3];
 
 // These two need to be set to constants here for the arrays, so extern isn't an option.
 
@@ -89,3 +91,11 @@ extern int nPUSolutionsCPU;
 extern int nStickSolutionsCPU;
 extern int nOUPSolutionsCPU;
 extern int nSpeedSolutionsCPU;
+
+// Slide Kick
+
+extern __device__ const int maxF3Turn;
+__device__ const int nTenKFloors = 4; // This needs to be set to a constant here for the array, so extern isn't an option.
+extern __device__ float tenKFloors[nTenKFloors][9];
+
+extern double maxSpeedSK;

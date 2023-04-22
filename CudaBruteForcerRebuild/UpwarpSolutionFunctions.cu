@@ -89,7 +89,7 @@ __device__ bool try_pu_xz(float* normal, float* position, short(&current_triangl
     return true;
 }
 
-__device__ bool try_pu_x(float* normal, float* position, short(&current_triangles)[2][3][3], float(&triangle_normals)[2][3], float(&T_start)[4][4], float(&T_tilt)[4][4], double x, double x1_min, double x1_max, double x2_min, double x2_max, double platform_min_x, double platform_max_x, double platform_min_z, double platform_max_z, double m, double c_min, double c_max, int q_steps, double max_speed, int platSolIdx) {
+__device__ bool try_pu_x(float* normal, float* position, short(&current_triangles)[2][3][3], float(&triangle_normals)[2][3], float(&T_start)[4][4], float(&T_tilt)[4][4], double x, double x1_min, double x1_max, double x2_min, double x2_max, double platform_min_x, double platform_max_x, double platform_min_z, double platform_max_z, double m, double c_min, double c_max, int q_steps, float max_speed, int platSolIdx) {
     double pu_platform_min_x = x + platform_min_x;
     double pu_platform_max_x = x + platform_max_x;
 
@@ -173,7 +173,7 @@ __device__ bool try_pu_x(float* normal, float* position, short(&current_triangle
     // Find the minimum speed to reach a valid PU from current x position.
     // If this exceeds our maximum allowed speed, then we can stop searching polygon
     // in this direction.
-    double min_needed_speed = (4.0 / (double)q_steps) * sqrt((x + platform_max_z - platform_min_z) * (x + platform_max_z - platform_min_z) + (closest_z_pu_platform * closest_z_pu_platform)) / fmin(triangle_normals[0][1], triangle_normals[1][1]);
+    double min_needed_speed = (4.0 / (double)q_steps) * sqrt((x + platform_max_z - platform_min_z) * (x + platform_max_z - platform_min_z) + (closest_z_pu_platform * closest_z_pu_platform)) / fmax(triangle_normals[0][1], triangle_normals[1][1]);
 
     if (min_needed_speed > max_speed) {
         return false;
@@ -248,7 +248,7 @@ __device__ bool try_pu_x(float* normal, float* position, short(&current_triangle
     }
 }
 
-__device__ bool try_pu_z(float* normal, float* position, short(&current_triangles)[2][3][3], float(&triangle_normals)[2][3], float(&T_start)[4][4], float(&T_tilt)[4][4], double z, double z1_min, double z1_max, double z2_min, double z2_max, double platform_min_x, double platform_max_x, double platform_min_z, double platform_max_z, double m, double c_min, double c_max, int q_steps, double max_speed, int platSolIdx) {
+__device__ bool try_pu_z(float* normal, float* position, short(&current_triangles)[2][3][3], float(&triangle_normals)[2][3], float(&T_start)[4][4], float(&T_tilt)[4][4], double z, double z1_min, double z1_max, double z2_min, double z2_max, double platform_min_x, double platform_max_x, double platform_min_z, double platform_max_z, double m, double c_min, double c_max, int q_steps, float max_speed, int platSolIdx) {
     double pu_platform_min_z = z + platform_min_z;
     double pu_platform_max_z = z + platform_max_z;
 
@@ -332,7 +332,7 @@ __device__ bool try_pu_z(float* normal, float* position, short(&current_triangle
     // Find the minimum speed to reach a valid PU from current z position.
     // If this exceeds our maximum allowed speed, then we can stop searching
     // the polygon in this direction.
-    double min_needed_speed = (4.0 / (double)q_steps) * sqrt((z + platform_max_x - platform_min_x) * (z + platform_max_x - platform_min_x) + (closest_x_pu_platform * closest_x_pu_platform)) / fmin(triangle_normals[0][1], triangle_normals[1][1]);
+    double min_needed_speed = (4.0 / (double)q_steps) * sqrt((z + platform_max_x - platform_min_x) * (z + platform_max_x - platform_min_x) + (closest_x_pu_platform * closest_x_pu_platform)) / fmax(triangle_normals[0][1], triangle_normals[1][1]);
 
     if (min_needed_speed > max_speed) {
         return false;
@@ -407,7 +407,7 @@ __device__ bool try_pu_z(float* normal, float* position, short(&current_triangle
     }
 }
 
-__device__ void try_normal(float* normal, float* position, int platSolIdx) {
+__device__ void try_normal(float* normal, float* position, int platSolIdx, float max_speed) {
     // Tilt angle cut-offs
     // These are the yaw boundaries where the platform tilt 
     // switches direction. Directions match normal_offsets:
@@ -415,8 +415,6 @@ __device__ void try_normal(float* normal, float* position, int platSolIdx) {
     // Between a[1] and a[2]: -x +z
     // Between a[2] and a[3]: -x -z
     // Between a[3] and a[0]: +x -z
-
-    double max_speed = 1000000000.0;
 
     short current_triangles[2][3][3];
     float triangle_normals[2][3];
@@ -779,11 +777,11 @@ __device__ void try_normal(float* normal, float* position, int platSolIdx) {
     }
 }
 
-__global__ void find_upwarp_solutions() {
+__global__ void find_upwarp_solutions(float maxSpeed) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < min(nPlatSolutions, MAX_PLAT_SOLUTIONS)) {
         struct PlatformSolution* platSol = &(platSolutions[idx]);
-        try_normal(platSol->endNormal, platSol->endPosition, idx);
+        try_normal(platSol->endNormal, platSol->endPosition, idx, maxSpeed);
     }
 }
 

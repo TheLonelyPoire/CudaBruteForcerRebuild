@@ -4,7 +4,7 @@ from getData import *
 folderName = "../output/ImportantSolutions/"
 fileName = "normalStagesReached_3_31_0_31.bin"
 
-range_parameters = getRangeParametersFromFile(getCorrespondingRangeParametersFilename(folderName + fileName))
+range_parameters = getRunParametersFromFile(getCorrespondingRunParametersFilename(folderName + fileName))
 normalsArr = getIntDataFromBinaryFile(fileName, folderName=folderName, nSamplesY=range_parameters.nSamplesNY, nSamplesX=range_parameters.nSamplesNX, nSamplesZ=range_parameters.nSamplesNZ)
 
 # range_parameters = RP_FINER_EXPANDED_RUN_Q2
