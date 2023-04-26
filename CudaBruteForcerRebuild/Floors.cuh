@@ -16,9 +16,18 @@ public:
     float min_z;
     float max_z;
 
+    bool is_lava;
+
+    __device__ SurfaceG(short x0, short y0, short z0, short x1, short y1, short z1, short x2, short y2, short z2, bool lava) {
+        short verts[3][3] = { {x0, y0, z0}, {x1, y1, z1}, {x2, y2, z2} };
+        set_vertices(verts);
+        is_lava = lava;
+    }
+
     __device__ SurfaceG(short x0, short y0, short z0, short x1, short y1, short z1, short x2, short y2, short z2) {
         short verts[3][3] = { {x0, y0, z0}, {x1, y1, z1}, {x2, y2, z2} };
         set_vertices(verts);
+        is_lava = false;
     }
 
     __device__ SurfaceG(short verts[3][3]) {

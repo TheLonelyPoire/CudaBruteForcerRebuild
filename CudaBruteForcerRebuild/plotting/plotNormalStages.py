@@ -56,7 +56,7 @@ def update_image_plot(implot, img, pauseRate : float, colmap : clrs.LinearSegmen
 
 
 folderName = "../output/"
-fileName = "normalStagesReached_4_22_10_26.bin"
+fileName = "normalStagesReached_4_26_0_55.bin"
 
 # folderName = "../output/ElevationRuns/"
 # fileName = "platformHWRs_2_8_1_48.bin"
@@ -124,7 +124,7 @@ if solverMode == 0:
 elif solverMode == 1:
     numStages = 10
 elif solverMode == 2:
-    numStages = 8
+    numStages = 9
 
 pauseRate = 0.01 
 

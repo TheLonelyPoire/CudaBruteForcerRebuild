@@ -36,7 +36,11 @@ void setup_output_slide_kick(std::ofstream& wf)
     wf << "Pre-Upwarp Position X, Pre-Upwarp Position Y, Pre-Upwarp Position Z, ";
     wf << "Post-Upwarp Position X, Post-Upwarp Position Y, Post-Upwarp Position Z, ";
     wf << "Upwarp PU X, Upwarp PU Z, ";
-    wf << "Upwarp Slide Facing Angle, Upwarp Slide IntendedMag, Upwarp Slide IntendedDYaw, Post-Upwarp Slide Angle" << std::endl;
+    wf << "Upwarp Slide Facing Angle, Upwarp Slide IntendedMag, Upwarp Slide IntendedDYaw, ";
+    wf << "Post-Breakdance Camera Yaw, ";
+    wf << "Post-Breakdance Stick X, Post-Breakdance Stick Y, ";
+    wf << "Landing Position X, Landing Position Y, Landing Position Z, ";
+    wf << "Landing Speed" << std::endl;
 }
 
 __global__ void copy_solution_pointers_sk(SKSolStruct s) {
@@ -55,6 +59,7 @@ __global__ void copy_solution_pointers_sk(SKSolStruct s) {
     speedSolutionsSK = s.speedSolutions;
     tenKSolutionsSK = s.tenKSolutions;
     slideSolutions = s.slideSolutions;
+    bdSolutions = s.bdSolutions;
 }
 
 void init_solution_structs_sk(SKSolStruct* s) {
@@ -73,6 +78,7 @@ void init_solution_structs_sk(SKSolStruct* s) {
     cudaMalloc((void**)&s->speedSolutions, MAX_SPEED_SOLUTIONS_SK * sizeof(SpeedSolutionSK));
     cudaMalloc((void**)&s->tenKSolutions, MAX_10K_SOLUTIONS_SK * sizeof(TenKSolutionSK));
     cudaMalloc((void**)&s->slideSolutions, MAX_SLIDE_SOLUTIONS * sizeof(SlideSolution));
+    cudaMalloc((void**)&s->bdSolutions, MAX_BD_SOLUTIONS * sizeof(BDSolution));
 
     copy_solution_pointers_sk << <1, 1 >> > (*s);
 }
@@ -1452,7 +1458,7 @@ __global__ void test_speed_solution(short* floorPoints, bool* squishEdges, const
                             }
 
                             for (int i = 0; i < intersections; i++) {
-                                if (startPositions[i][1] > -3071.0f) {
+                                if (startPositions[i][1] > -2971.0f && startPositions[i][1] < -2921.0f - (52.0f * sqrtf(1.0f - floorNormalY * floorNormalY) / floorNormalY)) {
                                     int f1Angle = atan2sG(frame1Position[2] - startPositions[i][2], frame1Position[0] - startPositions[i][0]);
                                     f1Angle = (65536 + f1Angle) % 65536;
 
@@ -1904,7 +1910,7 @@ __device__ void try_upwarp_slide(int solIdx, int angle, int intendedDYaw, float 
             if (upwarpPositionTest) {
                 int idx = atomicAdd(&nSlideSolutions, 1);
                 if (idx < MAX_SLIDE_SOLUTIONS) {
-                    int slideYaw = atan2sG(xVel1, xVel1);
+                    int slideYaw = atan2sG(zVel1, xVel1);
                     slideYaw = (65536 + slideYaw) % 65536;
 
                     int facingDYaw = angle - slideYaw;
@@ -1935,6 +1941,8 @@ __device__ void try_upwarp_slide(int solIdx, int angle, int intendedDYaw, float 
                     int postSlideAngle = slideYaw + newFacingDYaw;
                     postSlideAngle = (65536 + postSlideAngle) % 65536;
 
+                    float postSlideSpeed = -sqrtf(xVel1 * xVel1 + zVel1 * zVel1);
+
                     SlideSolution* solution = &(slideSolutions[idx]);
                     solution->tenKSolutionIdx = solIdx;
                     solution->preUpwarpPosition[0] = intendedPos[0];
@@ -1947,6 +1955,7 @@ __device__ void try_upwarp_slide(int solIdx, int angle, int intendedDYaw, float 
                     solution->intendedDYaw = intendedDYaw;
                     solution->stickMag = intendedMag;
                     solution->postSlideAngle = postSlideAngle;
+                    solution->postSlideSpeed = postSlideSpeed;
                 }
             }
         }
@@ -2182,6 +2191,229 @@ __global__ void find_slide_solutions() {
     }
 }
 
+__global__ void find_breakdance_solutions() {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (idx < min(nSlideSolutions, MAX_SLIDE_SOLUTIONS)) {
+        struct SlideSolution* slideSol = &(slideSolutions[idx]);
+
+        SurfaceG* floor;
+        float floorHeight;
+
+        int floorIdx = find_floor(slideSol->upwarpPosition, &floor, floorHeight, floorsG, total_floorsG);
+
+        int slopeAngle = atan2sG(floor->normal[2], floor->normal[0]);
+        slopeAngle = (slopeAngle + 65536) % 65536;
+
+        float steepness = sqrtf(floor->normal[0] * floor->normal[0] + floor->normal[0] * floor->normal[0]);
+
+        float cameraPositions[4][3] = { {-8192, -2918, -8192}, {-8192, -2918, 8191}, {8191, -2918, -8192}, {8191, -2918, 8191} };
+
+        int minCameraYaw = 0;
+        int maxCameraYaw = 0;
+
+        int refCameraYaw = calculate_camera_yaw(slideSol->upwarpPosition, cameraPositions[0]);
+        refCameraYaw = (65536 + refCameraYaw) % 65536;
+
+        for (int i = 1; i < 4; i++) {
+            int cameraYaw = calculate_camera_yaw(slideSol->upwarpPosition, cameraPositions[i]);
+            cameraYaw = (short)(cameraYaw - refCameraYaw);
+            minCameraYaw = min(minCameraYaw, cameraYaw);
+            maxCameraYaw = max(maxCameraYaw, cameraYaw);
+        }
+
+        int minCameraIdx = gReverseArctanTable[(65536 + minCameraYaw + refCameraYaw) % 65536];
+        int maxCameraIdx = gReverseArctanTable[(65536 + maxCameraYaw + refCameraYaw) % 65536];
+
+        if (minCameraIdx > maxCameraIdx) {
+            maxCameraIdx += 8192;
+        }
+
+        for (int i = minCameraIdx; i <= maxCameraIdx; i++) {
+            int cameraYaw = gArctanTableG[i % 8192];
+            cameraYaw = (65536 + cameraYaw) % 65536;
+
+            if (validCameraAngle[cameraYaw]) {
+                for (int x = -121; x <= 120; x++) {
+                    for (int y = -121; y <= 120; y++) {
+                        float stickX = x - (x < 0) + (x > 0);
+                        float stickY = y - (y < 0) + (y > 0);
+
+                        int rawX = x - 7 * (x < 0) + 7 * (x > 0);
+                        int rawY = y - 7 * (y < 0) + 7 * (y > 0);
+
+                        float stickMag = sqrtf(stickX * stickX + stickY * stickY);
+
+                        if (stickMag > 64) {
+                            stickX *= 64 / stickMag;
+                            stickY *= 64 / stickMag;
+                            stickMag = 64;
+                        }
+
+                        float intendedMag = ((stickMag / 64.0f) * (stickMag / 64.0f)) * 32.0f;
+
+                        int intendedYaw;
+
+                        if (intendedMag > 0.0f) {
+                            intendedYaw = atan2sG(-stickY, stickX) + cameraYaw;
+                            intendedYaw = (65536 + intendedYaw) % 65536;
+                        }
+                        else {
+                            intendedYaw = slideSol->postSlideAngle;
+                        }
+
+                        int intendedDYaw = (short)(intendedYaw - slideSol->postSlideAngle);
+                        intendedDYaw = (65536 + intendedDYaw) % 65536;
+
+                        float lossFactor = intendedMag / 32.0f * gCosineTableG[intendedDYaw >> 4] * 0.02f + 0.92f;
+
+                        float xVel = slideSol->postSlideSpeed * gSineTableG[slideSol->postSlideAngle >> 4];
+                        float zVel = slideSol->postSlideSpeed * gCosineTableG[slideSol->postSlideAngle >> 4];
+
+                        float oldSpeed = sqrtf(xVel * xVel + zVel * zVel);
+
+                        xVel += zVel * (intendedMag / 32.0f) * gSineTableG[intendedDYaw >> 4] * 0.05f;
+                        zVel -= xVel * (intendedMag / 32.0f) * gSineTableG[intendedDYaw >> 4] * 0.05f;
+
+                        float newSpeed = sqrtf(xVel * xVel + zVel * zVel);
+
+                        xVel = xVel * oldSpeed / newSpeed;
+                        zVel = zVel * oldSpeed / newSpeed;
+
+                        xVel += 7.0f * steepness * gSineTableG[slopeAngle >> 4];
+                        zVel += 7.0f * steepness * gCosineTableG[slopeAngle >> 4];
+
+                        xVel *= lossFactor;
+                        zVel *= lossFactor;
+
+                        float intendedPos[3] = { slideSol->upwarpPosition[0], slideSol->upwarpPosition[1], slideSol->upwarpPosition[2] };
+                        SurfaceG* newFloor = floor;
+                        bool fallTest = false;
+
+                        for (int j = 0; j < 4; j++) {
+                            intendedPos[0] = intendedPos[0] + newFloor->normal[1] * (xVel / 4.0f);
+                            intendedPos[2] = intendedPos[2] + newFloor->normal[1] * (zVel / 4.0f);
+
+                            int floorIdx = find_floor(intendedPos, &newFloor, floorHeight, floorsG, total_floorsG);
+
+                            if (floorIdx == -1) {
+                                break;
+                            }
+                            else if (intendedPos[1] > floorHeight + 100.0f) {
+                                fallTest = true;
+                                break;
+                            }
+                        }
+
+                        if (fallTest) {
+                            int slideYaw = atan2sG(zVel, xVel);
+                            slideYaw = (65536 + slideYaw) % 65536;
+
+                            int facingDYaw = slideSol->postSlideAngle - slideYaw;
+
+                            int newFacingDYaw = (short)facingDYaw;
+
+                            if (newFacingDYaw > 0 && newFacingDYaw <= 0x4000) {
+                                if ((newFacingDYaw -= 0x200) < 0) {
+                                    newFacingDYaw = 0;
+                                }
+                            }
+                            else if (newFacingDYaw > -0x4000 && newFacingDYaw < 0) {
+                                if ((newFacingDYaw += 0x200) > 0) {
+                                    newFacingDYaw = 0;
+                                }
+                            }
+                            else if (newFacingDYaw > 0x4000 && newFacingDYaw < 0x8000) {
+                                if ((newFacingDYaw += 0x200) > 0x8000) {
+                                    newFacingDYaw = 0x8000;
+                                }
+                            }
+                            else if (newFacingDYaw > -0x8000 && newFacingDYaw < -0x4000) {
+                                if ((newFacingDYaw -= 0x200) < -0x8000) {
+                                    newFacingDYaw = -0x8000;
+                                }
+                            }
+
+                            int postSlideAngle = slideYaw + newFacingDYaw;
+                            postSlideAngle = (65536 + postSlideAngle) % 65536;
+
+                            float postSlideSpeed = -sqrtf(xVel * xVel + zVel * zVel);
+
+                            xVel = postSlideSpeed * gSineTableG[postSlideAngle >> 4];
+                            float yVel = 0.0f;
+                            zVel = postSlideSpeed * gCosineTableG[postSlideAngle >> 4];
+
+                            bool falling = true;
+                            bool landed = false;
+
+                            while (falling) {
+                                for (int j = 0; j < 4; j++) {
+                                    intendedPos[0] = intendedPos[0] + (xVel / 4.0f);
+                                    intendedPos[1] = intendedPos[1] + (yVel / 4.0f);
+                                    intendedPos[2] = intendedPos[2] + (zVel / 4.0f);
+
+                                    float oldFloorHeight = floorHeight;
+                                    int floorIdx = find_floor(intendedPos, &newFloor, floorHeight, floorsG, total_floorsG);
+
+                                    if (floorIdx == -1) {
+                                        if (intendedPos[1] <= oldFloorHeight) {
+                                            intendedPos[1] = oldFloorHeight;
+                                            landed = true;
+                                        }
+                                        falling = false;
+                                        break;
+                                    }
+                                    else if (newFloor->normal[1] < 0.7880108) {
+                                        falling = false;
+                                        break;
+                                    }
+                                    else if (intendedPos[1] <= floorHeight) {
+                                        intendedPos[1] = floorHeight;
+
+                                        if (!newFloor->is_lava) {
+                                            landed = true;
+                                        }
+
+                                        falling = false;
+                                        break;
+                                    }
+                                    else if (intendedPos[1] < -1357.0) {
+                                        falling = false;
+                                        break;
+                                    }
+                                    else if (intendedPos[0] < INT_MIN || intendedPos[0] > INT_MAX || intendedPos[2] < INT_MIN || intendedPos[2] > INT_MAX) {
+                                        falling = false;
+                                        break;
+                                    }
+                                }
+
+                                yVel = fminf(yVel - 4.0f, 75.0f);
+                            }
+
+                            if (landed && intendedPos[1] >= -1357.0) {
+                                int solIdx = atomicAdd(&nBDSolutions, 1);
+
+                                if (solIdx < MAX_BD_SOLUTIONS) {
+                                    BDSolution* solution = &(bdSolutions[solIdx]);
+                                    solution->slideSolutionIdx = idx;
+                                    solution->cameraYaw;
+                                    solution->stickX = rawX;
+                                    solution->stickY = rawY;
+                                    solution->landingPosition[0] = intendedPos[0];
+                                    solution->landingPosition[1] = intendedPos[1];
+                                    solution->landingPosition[2] = intendedPos[2];
+                                    solution->postSlideSpeed = postSlideSpeed;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 // Overall Run Bruteforcer Function
 
 void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float normY, float normZ, short* host_tris, float* host_norms, short* dev_tris, float* dev_norms, SKSolStruct s, float normal_offsets_cpu[4][3], short* floorPoints, short* devFloorPoints, bool* squishEdges, bool* devSquishEdges, std::ofstream &wf, char* normalStages)
@@ -2198,6 +2430,7 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
     int sumSpeedSolutionsSKCPU = 0;
     int sum10KSolutionsCPU = 0;
     int sumSlideSolutionsCPU = 0;
+    int sumBDSolutionsCPU = 0;
 
     if (subSolutionPrintingMode == 2)
         printf("---------------------------------------\nTesting Normal: %g, %g, %g\n  Index: %d, %d, %d, %d\n", normX, normY, normZ, g, h, i, j);
@@ -2256,9 +2489,6 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
 
         int nPlatSolutionsCPU = 0;
         int nUpwarpSolutionsCPU = 0;
-
-        if (subSolutionPrintingMode == 2)
-            
 
         cudaMemcpyToSymbol(nPlatSolutions, &nPlatSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
@@ -2322,6 +2552,14 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
                 int nSpeedSolutionsSKCPU = 0;
                 int n10KSolutionsCPU = 0;
                 int nSlideSolutionsCPU = 0;
+                int nBDSolutionsCPU = 0;
+
+                cudaMemcpyToSymbol(nSK6Solutions, &nSK6SolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+                cudaMemcpyToSymbol(nSKUWSolutions, &nSKUWSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+                cudaMemcpyToSymbol(nSpeedSolutionsSK, &nSpeedSolutionsSKCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+                cudaMemcpyToSymbol(n10KSolutionsSK, &n10KSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+                cudaMemcpyToSymbol(nSlideSolutions, &nSlideSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+                cudaMemcpyToSymbol(nBDSolutions, &nBDSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
 
                 find_slide_kick_setup_triangle(floorPoints, devFloorPoints, sameNormal ? 4 : 3, host_norms[3 * x + 1], t, maxSpeedSK, nThreads);
 
@@ -2407,6 +2645,24 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
                     normalStages[current_normal_index] = max(7, normalStages[current_normal_index]);
                     sumSlideSolutionsCPU += nSlideSolutionsCPU;
 
+                    nBlocks = (nSlideSolutionsCPU + nThreads - 1) / nThreads;
+
+                    cudaMemcpyToSymbol(nBDSolutions, &nBDSolutionsCPU, sizeof(int), 0, cudaMemcpyHostToDevice);
+
+                    find_breakdance_solutions << <nBlocks, nThreads >> > ();
+
+                    cudaMemcpyFromSymbol(&nBDSolutionsCPU, nBDSolutions, sizeof(int), 0, cudaMemcpyDeviceToHost);
+                }
+
+                if (nBDSolutionsCPU > 0) {
+                    if (nBDSolutionsCPU > MAX_BD_SOLUTIONS) {
+                        fprintf(stderr, "Warning: Number of breakdance solutions for this normal has been exceeded. No more solutions for this normal will be recorded. Increase the internal maximum to prevent this from happening.\n");
+                        nBDSolutionsCPU = MAX_BD_SOLUTIONS;
+                    }
+
+                    normalStages[current_normal_index] = max(8, normalStages[current_normal_index]);
+                    sumBDSolutionsCPU += nBDSolutionsCPU;
+
                     int nSK1SolutionsCPU = 0;
                     int nSK2ASolutionsCPU = 0;
                     int nSK2BSolutionsCPU = 0;
@@ -2437,6 +2693,7 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
                     nSK5SolutionsCPU = min(nSK5SolutionsCPU, MAX_SK_PHASE_FIVE);
                     nSK6SolutionsCPU = min(nSK6SolutionsCPU, MAX_SK_PHASE_SIX);
 
+                    struct BDSolution* bdSolutionsCPU = (struct BDSolution*)std::malloc(nBDSolutionsCPU * sizeof(struct BDSolution));
                     struct SlideSolution* slideSolutionsCPU = (struct SlideSolution*)std::malloc(nSlideSolutionsCPU * sizeof(struct SlideSolution));
                     struct TenKSolutionSK* tenKSolutionsCPU = (struct TenKSolutionSK*)std::malloc(n10KSolutionsCPU * sizeof(struct TenKSolutionSK));
                     struct SpeedSolutionSK* speedSolutionsCPU = (struct SpeedSolutionSK*)std::malloc(nSpeedSolutionsSKCPU * sizeof(struct SpeedSolutionSK));
@@ -2455,6 +2712,7 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
                     struct SKPhase5* sk5SolutionsCPU = (struct SKPhase5*)std::malloc(nSK5SolutionsCPU * sizeof(struct SKPhase5));
                     struct SKPhase6* sk6SolutionsCPU = (struct SKPhase6*)std::malloc(nSK6SolutionsCPU * sizeof(struct SKPhase6));
 
+                    cudaMemcpy(bdSolutionsCPU, s.bdSolutions, nBDSolutionsCPU * sizeof(struct BDSolution), cudaMemcpyDeviceToHost);
                     cudaMemcpy(slideSolutionsCPU, s.slideSolutions, nSlideSolutionsCPU * sizeof(struct SlideSolution), cudaMemcpyDeviceToHost);
                     cudaMemcpy(tenKSolutionsCPU, s.tenKSolutions, n10KSolutionsCPU * sizeof(struct TenKSolutionSK), cudaMemcpyDeviceToHost);
                     cudaMemcpy(speedSolutionsCPU, s.speedSolutions, nSpeedSolutionsSKCPU * sizeof(struct SpeedSolutionSK), cudaMemcpyDeviceToHost);
@@ -2473,8 +2731,9 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
                     cudaMemcpy(sk5SolutionsCPU, s.sk5Solutions, nSK5SolutionsCPU * sizeof(struct SKPhase5), cudaMemcpyDeviceToHost);
                     cudaMemcpy(sk6SolutionsCPU, s.sk6Solutions, nSK6SolutionsCPU * sizeof(struct SKPhase6), cudaMemcpyDeviceToHost);
 
-                    for (int l = 0; l < nSlideSolutionsCPU; l++) {
-                        struct SlideSolution* slideSol = &(slideSolutionsCPU[l]);
+                    for (int l = 0; l < nBDSolutionsCPU; l++) {
+                        struct BDSolution* bdSol = &(bdSolutionsCPU[l]);
+                        struct SlideSolution* slideSol = &(slideSolutionsCPU[bdSol->slideSolutionIdx]);
                         struct TenKSolutionSK* tenKSol = &(tenKSolutionsCPU[slideSol->tenKSolutionIdx]);
                         struct SpeedSolutionSK* speedSol = &(speedSolutionsCPU[tenKSol->speedSolutionIdx]);
                         struct SKUpwarpSolution* skuwSol = &(skuwSolutionsCPU[speedSol->skuwSolutionIdx]);
@@ -2489,7 +2748,8 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
 
                         printf("---------------------------------------\nFound Solution:\n---------------------------------------\n    Start Position: %.10g, %.10g, %.10g\n    Frame 1 Position: %.10g, %.10g, %.10g\n    Frame 2 Position: %.10g, %.10g, %.10g\n    Return Position: %.10g, %.10g, %.10g\n    PU Departure Speed: %.10g (x=%.10g, z=%.10g)\n    PU Return Speed: %.10g (x=%.10g, z=%.10g)\n    Frame 1 Q-steps: %d\n    Frame 2 Q-steps: %d\n    Frame 3 Q-steps: %d\n", tenKSol->startPosition[0], tenKSol->startPosition[1], tenKSol->startPosition[2], tenKSol->frame1Position[0], tenKSol->frame1Position[1], tenKSol->frame1Position[2], tenKSol->frame2Position[0], tenKSol->frame2Position[1], tenKSol->frame2Position[2], platSol->returnPosition[0], platSol->returnPosition[1], platSol->returnPosition[2], tenKSol->pre10KSpeed, tenKSol->pre10KVel[0], tenKSol->pre10KVel[1], speedSol->returnSpeed, tenKSol->returnVel[0], tenKSol->returnVel[1], 4, p1Sol->q2, 1);
                         printf("    10k Stick X: %d\n    10k Stick Y: %d\n    Frame 2 HAU: %d\n    10k Camera Yaw: %d\n    Start Floor Normal: %.10g, %.10g, %.10g\n", ((p5Sol->stickX == 0) ? 0 : ((p5Sol->stickX < 0) ? p5Sol->stickX - 6 : p5Sol->stickX + 6)), ((p5Sol->stickY == 0) ? 0 : ((p5Sol->stickY < 0) ? p5Sol->stickY - 6 : p5Sol->stickY + 6)), p2Sol->f2Angle, p4Sol->cameraYaw, host_norms[3 * x], host_norms[3 * x + 1], host_norms[3 * x + 2]);
-                        printf("---------------------------------------\n    Tilt Frames: %d\n    Post-Tilt Platform Normal: %.10g, %.10g, %.10g\n    Post-Tilt Position: %.10g, %.10g, %.10g\n    Pre-Upwarp Position: %.10g, %.10g, %.10g\n    Post-Upwarp Position: %.10g, %.10g, %.10g\n    Upwarp PU X: %d\n    Upwarp PU Z: %d\n    Upwarp Slide Facing Angle: %d\n    Upwarp Slide Intended Mag: %.10g\n    Upwarp Slide Intended DYaw: %d\n    Post-Upwarp Slide Angle: %d\n---------------------------------------\n\n\n", platSol->nFrames, platSol->endNormal[0], platSol->endNormal[1], platSol->endNormal[2], platSol->endPosition[0], platSol->endPosition[1], platSol->endPosition[2], slideSol->preUpwarpPosition[0], slideSol->preUpwarpPosition[1], slideSol->preUpwarpPosition[2], slideSol->upwarpPosition[0], slideSol->upwarpPosition[1], slideSol->upwarpPosition[2], uwSol->pux, uwSol->puz, slideSol->angle, slideSol->stickMag, slideSol->intendedDYaw, slideSol->postSlideAngle);
+                        printf("---------------------------------------\n    Tilt Frames: %d\n    Post-Tilt Platform Normal: %.10g, %.10g, %.10g\n    Post-Tilt Position: %.10g, %.10g, %.10g\n    Pre-Upwarp Position: %.10g, %.10g, %.10g\n    Post-Upwarp Position: %.10g, %.10g, %.10g\n    Upwarp PU X: %d\n    Upwarp PU Z: %d\n    Upwarp Slide Facing Angle: %d\n    Upwarp Slide Intended Mag: %.10g\n    Upwarp Slide Intended DYaw: %d\n", platSol->nFrames, platSol->endNormal[0], platSol->endNormal[1], platSol->endNormal[2], platSol->endPosition[0], platSol->endPosition[1], platSol->endPosition[2], slideSol->preUpwarpPosition[0], slideSol->preUpwarpPosition[1], slideSol->preUpwarpPosition[2], slideSol->upwarpPosition[0], slideSol->upwarpPosition[1], slideSol->upwarpPosition[2], uwSol->pux, uwSol->puz, slideSol->angle, slideSol->stickMag, slideSol->intendedDYaw);
+                        printf("---------------------------------------\n    Post-Breakdance Camera Yaw: %d\n    Post-Breakdance Stick X: %d\n    Post-Breakdance Stick Y: %d\n    Landing Position: %.10g, %.10g, %.10g\n    Landing Speed: %.10g\n---------------------------------------\n\n\n", bdSol->cameraYaw, bdSol->stickX, bdSol->stickY, bdSol->landingPosition[0], bdSol->landingPosition[1], bdSol->landingPosition[2], bdSol->postSlideSpeed);
 
                         wf << normX << ", " << normY << ", " << normZ << ", ";
                         wf << tenKSol->startPosition[0] << ", " << tenKSol->startPosition[1] << ", " << tenKSol->startPosition[2] << ", ";
@@ -2508,9 +2768,15 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
                         wf << slideSol->preUpwarpPosition[0] << ", " << slideSol->preUpwarpPosition[1] << ", " << slideSol->preUpwarpPosition[2] << ", ";
                         wf << slideSol->upwarpPosition[0] << ", " << slideSol->upwarpPosition[1] << ", " << slideSol->upwarpPosition[2] << ", ";
                         wf << uwSol->pux << ", " << uwSol->puz << ", ";
-                        wf << slideSol->angle << ", " << slideSol->stickMag << ", " << slideSol->intendedDYaw << ", " << slideSol->postSlideAngle << std::endl;
+                        wf << slideSol->angle << ", " << slideSol->stickMag << ", " << slideSol->intendedDYaw << ", ";
+                        wf << bdSol->cameraYaw << ", ";
+                        wf << bdSol->stickX << ", " << bdSol->stickY << ", ";
+                        wf << bdSol->landingPosition[0] << ", " << bdSol->landingPosition[1] << ", " << bdSol->landingPosition[2] << ", ";
+                        wf << bdSol->postSlideSpeed << std::endl;
                     }
 
+                    free(bdSolutionsCPU);
+                    free(slideSolutionsCPU);
                     free(tenKSolutionsCPU);
                     free(speedSolutionsCPU);
                     free(skuwSolutionsCPU);
@@ -2526,12 +2792,6 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
                     free(sk5SolutionsCPU);
                     free(sk6SolutionsCPU);
                 }
-
-                sumSK6SolutionsCPU = max(nSK6SolutionsCPU, sumSK6SolutionsCPU);
-                sumSKUWSolutionsCPU = max(nSKUWSolutionsCPU, sumSKUWSolutionsCPU);
-                sumSpeedSolutionsSKCPU = max(nSpeedSolutionsSKCPU, sumSpeedSolutionsSKCPU);
-                sum10KSolutionsCPU = max(n10KSolutionsCPU, sum10KSolutionsCPU);
-                sumSlideSolutionsCPU = max(nSlideSolutionsCPU, sumSlideSolutionsCPU);
             }
         }
     }
@@ -2542,6 +2802,9 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
             printf("# 10K Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, sum10KSolutionsCPU);
 
         if (sumSlideSolutionsCPU > 0)
+            printf("# Slide Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, sumSlideSolutionsCPU);
+
+        if (sumBDSolutionsCPU > 0)
             printf("# Slide Solutions (%d, %d, %d, %d): %d\n\n", g, h, i, j, sumSlideSolutionsCPU);
     }
 
@@ -2554,5 +2817,6 @@ void run_slide_kick_bruteforcer(int g, int h, int i, int j, float normX, float n
         printf("  Stage 5 Solutions: %d\n", sumSpeedSolutionsSKCPU);
         printf("  Stage 6 Solutions: %d\n", sum10KSolutionsCPU);
         printf("  Stage 7 Solutions: %d\n", sumSlideSolutionsCPU);
+        printf("  Stage 8 Solutions: %d\n", sumBDSolutionsCPU);
     }
 }

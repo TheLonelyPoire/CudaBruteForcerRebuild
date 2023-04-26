@@ -1,14 +1,14 @@
 #include "RunParameters.hpp"
 
 int nThreads = 256;
-size_t memorySize = 10000000;
+size_t memorySize = 9000000;
 
 bool computeMaxElevation = false;
 bool computeMinUpwarp = false;
 
 int solverMode = 2;
 
-bool useZXSum = false;
+bool useZXSum = true;
 bool usePositiveZ = true;
 
 bool stopAtUpwarp = false;
@@ -23,26 +23,26 @@ int maxQ3 = 1; // Default 2 for non-HAU, 4 for HAU, now set to 1
 int nPUFrames = 3;
 int maxFrames = 60; // 100 for non-HAU, 200 for HAU
 
-float minNX = -0.207f;
-float maxNX = -0.207f;
+float minNX = -0.22f;
+float maxNX = -0.17f;
 float minNZ = 0.3865f;
 float maxNZ = 0.3865f;
-float minNY = 0.816666667f;
-float maxNY = 0.816666667f;
-float minNZXSum = 0.60f;
-float maxNZXSum = 0.62f;
+float minNY = 0.82f;
+float maxNY = 0.83f;
+float minNZXSum = 0.55f;
+float maxNZXSum = 0.60f;
 
-int nSamplesNX = 1;
-int nSamplesNZ = 1;
-int nSamplesNY = 1;
+int nSamplesNX = 51;
+int nSamplesNZ = 51;
+int nSamplesNY = 11;
 
 float deltaX = 0.5f;
 float deltaZ = 0.5f;
 
 std::string normalsInput = "";
 
-//Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f }; // Pyra
-Vec3f platformPos = { -2866.0f, -3225.0f, -715.0f }; // Mythra
+Vec3f platformPos = { -1945.0f, -3225.0f, -715.0f }; // Pyra
+//Vec3f platformPos = { -2866.0f, -3225.0f, -715.0f }; // Mythra
 
 bool verbose = true;
 

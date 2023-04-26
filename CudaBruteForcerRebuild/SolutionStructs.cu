@@ -76,3 +76,6 @@ __device__ int n10KSolutionsSK;
 
 __device__ struct SlideSolution* slideSolutions;
 __device__ int nSlideSolutions;
+
+__device__ struct BDSolution* bdSolutions;
+__device__ int nBDSolutions;

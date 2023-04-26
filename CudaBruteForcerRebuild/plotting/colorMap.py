@@ -132,15 +132,16 @@ CM_MARBLER_PARA = computeColorMapFromHexList(
 )
 
 CM_SLIDE_KICK = computeColorMapFromHexList(
-    ['#000000', '#006050', 
+    ['#000000',
+     '#900010', '#006050', 
      '#902090', '#00ADFF', 
      '#FF4030', '#00C000', 
      '#FFF200', '#FFFFFF']
 )
 
 CM_SLIDE_KICK_PARA = computeColorMapFromHexList(
-    ['#404000',
-     '#000000', '#006050', 
+    ['#404000', '#000000',
+     '#900010', '#006050', 
      '#902090', '#00ADFF', 
      '#FF4030', '#00C000', 
      '#FFF200', '#FFFFFF']

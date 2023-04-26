@@ -37,9 +37,10 @@
 
 
 # define MAX_SK_UPWARP_SOLUTIONS 500000
-# define MAX_SPEED_SOLUTIONS_SK   300000000
+# define MAX_SPEED_SOLUTIONS_SK   500000000
 # define MAX_10K_SOLUTIONS_SK 50000
 # define MAX_SLIDE_SOLUTIONS   50000
+# define MAX_BD_SOLUTIONS   50000
 
 
 // =================================================
@@ -186,6 +187,7 @@ struct SKSolStruct {
     struct SpeedSolutionSK* speedSolutions;
     struct TenKSolutionSK* tenKSolutions;
     struct SlideSolution* slideSolutions;
+    struct BDSolution* bdSolutions;
 };
 
 struct SKPhase1 {
@@ -278,6 +280,16 @@ struct SlideSolution {
     float stickMag;
     int intendedDYaw;
     int postSlideAngle;
+    float postSlideSpeed;
+};
+
+struct BDSolution {
+    int slideSolutionIdx;
+    float landingPosition[3];
+    int cameraYaw;
+    int stickX;
+    int stickY;
+    float postSlideSpeed;
 };
 
 // =================================================
@@ -359,3 +371,6 @@ extern __device__ int n10KSolutionsSK;
 
 extern __device__ struct SlideSolution* slideSolutions;
 extern __device__ int nSlideSolutions;
+
+extern __device__ struct BDSolution* bdSolutions;
+extern __device__ int nBDSolutions;
